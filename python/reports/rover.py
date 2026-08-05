@@ -454,7 +454,8 @@ def _plot(rep: ReportWriter, cfg: AnchorConfig, per_tag: dict,
         ax.set_aspect('equal', 'box')
         ax.grid(alpha=0.25)
         ax.legend(fontsize=8)
-        ax.set_xlabel('x (m)'); ax.set_ylabel('y (m)')
+        ax.set_xlabel('x (m)')
+        ax.set_ylabel('y (m)')
         ax.set_title('Rover run — UWB vs AprilTag truth (Kinect frame)')
 
 

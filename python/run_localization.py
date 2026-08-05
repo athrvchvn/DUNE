@@ -19,10 +19,16 @@ Usage:
     python run_localization.py --udp-port 4100 --ws-port 8765
 """
 
-import sys, os, json, time, argparse, asyncio, socket, threading, signal, math, subprocess, webbrowser
+import sys
+import json
+import time
+import argparse
+import asyncio
+import math
+import subprocess
+import webbrowser
 from pathlib import Path
 from datetime import datetime
-from collections import deque
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -38,6 +44,7 @@ import host.jobs_calib                        # noqa: F401  (registers the CAL j
 from host.paths import list_files
 
 from dune import FrameParser, AnchorConfig
+from dune.paths          import CONFIG_DIR
 from dune.ekf            import quat_rpy, world_accel
 from dune.fusion_config  import FUSION_DEFAULTS, TAG_PALETTE
 from dune.range_correction import RangeCorrection
@@ -48,7 +55,7 @@ from tools.multipoint_survey import (solve_anchor_positions, write_anchors_json,
                                      update_anchor_json, SURVEY_GRID)
 from tools.calibration_manager import CalibrationManager
 from vision.vision_config import VisionConfig
-from vision.backproject import pixel_to_world, mirror_correct
+from vision.backproject import mirror_correct
 from vision.kinect_capture import KinectCapture
 from vision.apriltag_detect import detect_tags, draw_overlay, parse_anchor_role
 from vision.world_registration import (
@@ -77,7 +84,6 @@ except ImportError:
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
 SCRIPT_DIR = Path(__file__).resolve().parent
-from dune.paths import CONFIG_DIR
 LOG_DIR    = SCRIPT_DIR / 'logs'
 LOG_DIR.mkdir(exist_ok=True)
 
@@ -536,7 +542,7 @@ async def _do_survey_compute():
     pipeline = LivePipeline(cfg_global)
     if calib_mgr:
         calib_mgr.on_anchors_updated(cfg_global)
-    print(f"[SURVEY] Pipeline reloaded with new anchor positions")
+    print("[SURVEY] Pipeline reloaded with new anchor positions")
 
     await broadcast(_config_msg())
 

@@ -1,6 +1,6 @@
 function out = motion_check(logFile, opts)
 %MOTION_CHECK Assess moving-tag behaviour from a live_tag JSONL log.
-%   out = motion_check("D:\UWB_3\matlab\logs\rtls_log_xxx.jsonl")
+%   out = motion_check(fullfile(dune.logsDir(), "rtls_log_xxx.jsonl"))
 %
 %   No Kinect truth required - this is the poor-man's motion check: it
 %   segments the session into STILL and MOVING stretches, and reports the

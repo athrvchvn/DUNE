@@ -1,15 +1,17 @@
 """
 calibration_manager.py — Tier-1 hardware antenna-delay traceability + loader.
 
-After the 2-tier redesign (see docs/calibration_redesign_2tier.md):
+After the 2-tier redesign (see docs/calibration.md):
 
   - Tier-1 (hardware antenna delay) is set on the tag via the HWCALIB binary search and
     stored in each anchor's NVS. This manager only RECORDS the resulting delays in
     calibration.json (`level1_hardware`) for traceability. It does NOT apply any software
     correction and never pushes delays itself.
 
-  - Tier-2 (systematic per-anchor error) is handled by the SPATIAL ERROR MAP
-    (`dune/error_map.py` + `error_map.json`), NOT here.
+  - Tier-2 (systematic per-anchor error) is handled by the first-path-power
+    correction (`dune/range_correction.py` + `config/range_correction.json`), NOT here.
+    The spatial error map it replaced is retired; only the captured
+    `config/error_map.json` survives, as a recorded result rather than a code path.
 
 The old Level-2 software bias (per-anchor constant/linear) and the b0→Δticks antenna-delay
 auto-push were removed: together they caused a double-correction, and the push had an

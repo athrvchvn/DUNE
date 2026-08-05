@@ -1,5 +1,5 @@
 {
-  "_comment": "Anchor geometry for the MATLAB host. Copy to anchors.json and edit. THIS is the only place anchors are added - the firmware never changes. id = anchor short address (decimal) matching ANCHOR_ID in Anchor.ino. Coordinates in metres. For 2D set dim=2 (z ignored). bounds = [xmin xmax ymin ymax zmin zmax] for the plot.",
+  "_comment": "Anchor geometry, read by BOTH host pipelines (Python and MATLAB). Copy to anchors.json and edit. THIS is the only place anchors are added or moved - the firmware never changes and no reflash is needed. id = anchor short address (decimal), matching ANCHOR_ID in Anchor.ino. Coordinates in metres. Set dim=2 for a planar solve (z still used for the range prediction), dim=3 for full XYZ. bounds = [xmin xmax ymin ymax zmin zmax], used for plot limits only. Spread the anchors out and avoid a near-collinear layout: the solver refuses to solve a mirror-ambiguous geometry rather than return a reflected position. See docs/getting_started.md and docs/anchor_survey.md.",
   "dim": 2,
   "bounds": [
     -0.5,

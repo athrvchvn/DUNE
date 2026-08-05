@@ -1,0 +1,50 @@
+cff-version: 1.2.0
+title: "DUNE: A Dual-Tag UWB Navigation Engine for Indoor Ground Robots"
+message: "If you use this software, please cite both the software and the paper."
+type: software
+authors:
+  - family-names: Chavan
+    given-names: Atharva
+    affiliation: "Department of Mechanical Engineering, Indian Institute of Technology Indore"
+    email: me240003021@iiti.ac.in
+  - family-names: M
+    given-names: Adersh
+    affiliation: "Department of Mechanical Engineering, Indian Institute of Technology Kanpur"
+    email: adm20@iitk.ac.in
+  - family-names: Dutta
+    given-names: Ashish
+    affiliation: "Department of Mechanical Engineering, Indian Institute of Technology Kanpur"
+    email: adutta@iitk.ac.in
+repository-code: "https://github.com/AdershM-2/DUNE"
+license: MIT
+version: 1.0.0
+# TODO before release: enable the Zenodo GitHub integration, push the v1.0.0 tag, then
+# put the minted DOI here, in README.md, and in the paper's \repoLink macro.
+# doi: 10.5281/zenodo.XXXXXXX
+keywords:
+  - ultra-wideband
+  - DW1000
+  - indoor localization
+  - real-time location system
+  - moving horizon estimation
+  - mobile robots
+abstract: >-
+  DUNE is an open-source indoor positioning system for mobile robots built on
+  commodity DW1000 transceivers, spanning the complete pipeline from firmware,
+  ranging protocol and channel scheduling to calibration, anchor survey,
+  localization, filtering and validation. At its core is a rigid-body
+  moving-horizon estimator that recovers a single vehicle pose from dual-tag
+  ranging, making the inter-tag baseline exact by construction rather than a
+  tunable penalty while simultaneously recovering heading.
+preferred-citation:
+  type: article
+  title: "DUNE: A Dual-Tag UWB Navigation Engine for Indoor Ground Robots"
+  authors:
+    - family-names: Chavan
+      given-names: Atharva
+    - family-names: M
+      given-names: Adersh
+    - family-names: Dutta
+      given-names: Ashish
+  journal: "IEEE Robotics and Automation Practice (RA-P)"
+  year: 2026

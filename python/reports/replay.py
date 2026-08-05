@@ -264,7 +264,8 @@ def _plot_tag(rep: ReportWriter, cfg: AnchorConfig, tag_id: int, T: dict) -> Non
                         xytext=(6, 5), fontsize=8)
         ax.set_aspect('equal', 'box')
         ax.grid(alpha=0.25)
-        ax.set_xlabel('x (m)'); ax.set_ylabel('y (m)')
+        ax.set_xlabel('x (m)')
+        ax.set_ylabel('y (m)')
         ax.set_title(f"tag {tag_id} — replay trajectory "
                      f"({int(solved.sum())}/{solved.size} solved)")
 

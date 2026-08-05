@@ -16,7 +16,7 @@ classdef MheEstimator < handle
     %                the UWB anchors the absolute heading, the gyro smooths it.
     %
     %   Requires CasADi on the path (caller adds it):
-    %     addpath('C:\Users\itisa\Downloads\casadi-3.7.0');
+    %     addpath('<path to your casadi-3.x.y folder>');
     %
     %   Usage:
     %     mhe = dune.MheEstimator(A.pos); mhe.model = "unicycle"; mhe.build();

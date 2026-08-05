@@ -28,7 +28,7 @@ classdef MheRigid < handle
     %   enter the geometry. (It would matter only for a laterally-offset tag.)
     %
     %   Requires CasADi on the path:
-    %     addpath('C:\Users\itisa\Downloads\casadi-3.7.0');
+    %     addpath('<path to your casadi-3.x.y folder>');
     %
     %   Usage:
     %     mr = dune.MheRigid(A.pos); mr.baseline = 0.50; mr.build();

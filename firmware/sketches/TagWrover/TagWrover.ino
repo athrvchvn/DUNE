@@ -82,7 +82,7 @@ static const uint8_t ANCHORS[]  = { 0x01, 0x02, 0x03, 0x04 };
 static const uint8_t N_ANCHORS  = sizeof(ANCHORS) / sizeof(ANCHORS[0]);
 
 #if defined(UWB_HOSTLINK_UDP)
-static const char*    WIFI_SSID = "iitk";          // ← fill in
+static const char*    WIFI_SSID = "your-wifi-ssid";  // ← fill in
 static const char*    WIFI_PASS = "";                    // ← "" for open network
 static IPAddress      HOST_IP(255, 255, 255, 255);       // ← Python/MATLAB PC IP
 static const uint16_t HOST_PORT  = 4100;

@@ -23,7 +23,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from rover.controller import (ARM_LEASE_S, INTENT_TIMEOUT_S,  # noqa: E402
+from rover.controller import (INTENT_TIMEOUT_S,  # noqa: E402
                               OMEGA_MAX, V_MAX, RoverController)
 from rover.teensy import TeensyError, TeensyLink                # noqa: E402
 
@@ -521,7 +521,7 @@ async def test_wheels_test_dry_run_sends_nothing(tmp_path):
     app, c, link = _app_with_rover(tmp_path)
     try:
         before = len(link.fake.written)
-        job_id = await app.jobs.run('wheels_test', {'rpm': 150, 'seconds': 0.2})
+        await app.jobs.run('wheels_test', {'rpm': 150, 'seconds': 0.2})
         for _ in range(100):
             await asyncio.sleep(0.05)
             done = [m for m in _msgs(app) if m['type'] in

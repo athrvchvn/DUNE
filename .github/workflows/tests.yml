@@ -1,0 +1,58 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.10 is the verified version (docs/compatibility.md); 3.12 guards
+        # against drift on newer runtimes. pyproject declares >=3.9.
+        python-version: ['3.10', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: pip install -e "python/[all]"
+
+      - name: Import the package the way a user would
+        run: python -c "import dune; from dune.paths import CONFIG_DIR; print(dune.__file__, CONFIG_DIR)"
+
+      - name: Entry points start
+        run: python python/run_localization.py --help
+
+      - name: Examples run
+        run: |
+          python examples/five_anchor.py
+          python examples/three_anchor.py
+          python examples/replay_log.py
+
+      - name: Tests
+        run: python -m pytest python/tests -q
+
+      # A test that writes into the checkout can change the *outcome* of the next
+      # run — the suite once passed on a fresh clone and failed forever after.
+      # CI always starts clean, so it would never catch that on its own. These
+      # two steps are what make it catch it.
+      - name: Tests again — the result must be identical
+        run: python -m pytest python/tests -q
+
+      - name: The working tree must still be clean
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::the test run left files behind:"
+            git status --porcelain
+            exit 1
+          fi

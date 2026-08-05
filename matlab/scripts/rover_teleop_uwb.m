@@ -40,7 +40,8 @@ clear; close all; clc;
 MMS_ROOT = 'D:\MMS_Codebase\matlab';
 
 % --- Hardware ---
-COM_PORT = 'COM8';
+COM_PORT = 'COM8';   % ← PER MACHINE. Windows 'COM8'; Linux '/dev/ttyUSB0';
+                     %   macOS '/dev/tty.usbserial-*'. See docs/getting_started.md.
 APRILTAG_ID = 0;
 
 % --- Ground-truth source for the AprilTag pose ---
@@ -69,7 +70,8 @@ UWB_ENABLE   = true;
 % downstream of this switch changes.
 UWB_TRANSPORT = "serial";    % "udp" | "serial"
 UWB_PORT     = 4100;      % HostLink UDP broadcast port ("udp" only)
-UWB_TAG_COM  = "COM12";        % master tag's COM port ("serial"; "" = auto-detect)
+UWB_TAG_COM  = "COM12";        % ← PER MACHINE. Master tag's port ("serial";
+                               %   "" = auto-detect). Linux: "/dev/ttyUSB0".
 UWB_FRONT_TAG = 241;      % no IMU, mounted in front
 UWB_REAR_TAG  = 240;      % BNO085, mounted behind
 UWB_BASELINE  = 0.527;    % m, antenna centre-to-centre (measured 52.7 cm)

@@ -1,0 +1,900 @@
+\documentclass[11pt,a4paper]{article}
+
+%% ---- Packages ---------------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cleveref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{parskip}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+\geometry{
+  top=2.5cm, bottom=2.5cm,
+  left=2.5cm, right=2.5cm
+}
+
+%% ---- Styling ----------------------------------------------------------------
+\definecolor{uwbblue}{RGB}{0,82,155}
+\definecolor{uwbgray}{RGB}{90,90,90}
+\definecolor{codegray}{RGB}{245,245,245}
+\definecolor{warnbg}{RGB}{255,250,230}
+\definecolor{warnborder}{RGB}{200,150,0}
+\definecolor{intuitionbg}{RGB}{235,245,255}
+\definecolor{intuitionborder}{RGB}{0,82,155}
+\definecolor{examplebg}{RGB}{240,255,240}
+\definecolor{exampleborder}{RGB}{0,140,0}
+
+\titleformat{\section}{\large\bfseries\color{uwbblue}}{{\thesection}}{1em}{}[\color{uwbblue}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{uwbblue}}{{\thesubsection}}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{uwbgray}}{{\thesubsubsection}}{1em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{uwbgray}UWB RTLS --- Design Document}
+\fancyhead[R]{\small\color{uwbgray}\leftmark}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\newtcolorbox{keybox}[1][]{
+  enhanced, breakable,
+  colback=codegray, colframe=uwbblue!60,
+  boxrule=0.5pt, arc=3pt,
+  title=#1, fonttitle=\bfseries\small\color{uwbblue},
+  attach boxed title to top left={yshift=-2mm, xshift=4mm},
+  boxed title style={colback=white, colframe=uwbblue!60}
+}
+
+\newtcolorbox{notebox}{
+  enhanced, breakable,
+  colback=warnbg, colframe=warnborder,
+  boxrule=0.5pt, arc=3pt, left=4pt, right=4pt
+}
+
+\newtcolorbox{intubox}[1][]{
+  enhanced, breakable,
+  colback=intuitionbg, colframe=intuitionborder,
+  boxrule=0.5pt, arc=3pt, left=6pt, right=6pt,
+  title=\textbf{#1}, fonttitle=\small\color{uwbblue}
+}
+
+\newtcolorbox{exbox}[1][]{
+  enhanced, breakable,
+  colback=examplebg, colframe=exampleborder,
+  boxrule=0.5pt, arc=3pt, left=6pt, right=6pt,
+  title=\textbf{#1}, fonttitle=\small\color{exampleborder!70!black}
+}
+
+%% ---- Math macros ------------------------------------------------------------
+\newcommand{\vect}[1]{\bm{#1}}
+\newcommand{\mat}[1]{\mathbf{#1}}
+\newcommand{\norm}[1]{\left\|#1\right\|}
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\Trans}{^{\top}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\eye}[1]{\mat{I}_{#1}}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\tr}{tr}
+
+%% ---- Document ---------------------------------------------------------------
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\color{uwbblue}\rule{\linewidth}{2pt}}\\[0.5cm]
+  {\huge\bfseries Ultra-Wideband Indoor Positioning System\\[0.3cm]
+  \large Design Document: Motivation, Objectives, Methodology \& Mathematics}\\[0.4cm]
+  {\color{uwbblue}\rule{\linewidth}{2pt}}\\[1.5cm]
+
+  {\large\itshape Target Platform:} \textbf{Makerfabs ESP32 UWB Pro (DW1000)}\\[0.3cm]
+  {\large\itshape Sensing:} \textbf{UWB Ranging + BNO085 IMU}\\[0.3cm]
+  {\large\itshape Output:} \textbf{XYZ Position + Roll/Pitch/Yaw Orientation}\\[1.5cm]
+
+  \begin{tabular}{ll}
+    \textbf{Version}  & 2.0 \\
+    \textbf{Date}     & June 2026 \\
+    \textbf{Status}   & Active Development \\
+  \end{tabular}
+  \vfill
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+%% =============================================================================
+\section{Introduction and Motivation}
+%% =============================================================================
+
+\subsection{Problem Statement}
+
+Accurate indoor positioning is a prerequisite for autonomous robotics, asset tracking, human-motion capture, augmented reality, and industrial safety systems. The Global Navigation Satellite System (GNSS) fails indoors because satellite signals are attenuated by building materials and the reflected multipath environment renders pseudorange measurements unreliable. Optical systems (cameras, LiDAR) achieve high accuracy but require significant infrastructure, computational resources, and are sensitive to lighting conditions and occlusion. Inertial systems drift unboundedly without external correction.
+
+The result is a gap: no low-cost, infrastructure-light technology currently provides real-time 3D position \emph{and} 3D orientation (six degrees of freedom, 6-DOF) indoors at centimetre-level accuracy with off-the-shelf microcontroller hardware.
+
+\subsection{Ultra-Wideband as a Candidate Technology}
+
+Ultra-wideband (UWB) radio occupies a spectrum of at least 500\,MHz bandwidth (typically 3.1--10.6\,GHz for IEEE 802.15.4a devices). The key physical properties that make UWB suitable for ranging are:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Time resolution.} The large bandwidth produces a narrow autocorrelation peak. The Decawave DW1000 timestamps signal arrivals at 15.65\,ps resolution (64\,GHz system clock), corresponding to a theoretical distance resolution of $15.65 \times 10^{-12} \times 3 \times 10^8 \approx 4.7$\,mm per clock tick.
+  \item \textbf{Multipath separation.} The short pulse duration ($\sim$2\,ns) allows the receiver to distinguish the direct-path component from reflections that arrive within a few nanoseconds. Narrowband systems (Bluetooth, Wi-Fi, Zigbee) cannot make this separation.
+  \item \textbf{Material penetration.} UWB signals propagate through common building materials (drywall, wood, glass), enabling ranging through soft obstructions at the cost of a positive distance bias.
+  \item \textbf{Low power.} The FCC Part 15 power limit ($-41.3$\,dBm/MHz) combined with the wide bandwidth results in pulse energy well below noise floor for narrowband receivers, making UWB inherently covert and interference-resistant.
+\end{itemize}
+
+The Decawave DW1000 chip, used in the Makerfabs ESP32 UWB Pro module, implements IEEE 802.15.4-2011 UWB and achieves a specified ranging accuracy of $\pm$10\,cm in line-of-sight (LOS) conditions.
+
+\subsection{Limitations of Existing Open-Source Libraries}
+
+Five open-source Arduino libraries implement DW1000 positioning. All share structural limitations that prevent scaling beyond four anchors or a single mobile tag:
+
+\begin{table}[ht]
+\centering
+\caption{Open-source DW1000 library comparison}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Feature} & \textbf{thotro} & \textbf{Makerfabs} & \textbf{jremington} & \textbf{pizzo00} & \textbf{dw1000-ng} \\
+\midrule
+Anchor ceiling         & 4  & 4  & 7* & 6  & Unlimited \\
+RF collisions          & Yes & Yes & Yes & Yes & No \\
+Update rate (Hz)       & 0.6 & 0.6 & 0.6 & 1 & 2 \\
+Multi-tag              & No & No & No & Partial & No \\
+NLOS detection         & No & No & No & No & No \\
+3D positioning         & No & No & Fragile & No & No \\
+IMU fusion             & No & No & No & No & No \\
+Maintained             & No & Partial & Yes & Yes & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The four-anchor ceiling in \texttt{thotro} and its derivatives arises from the RANGE frame encoding: each device occupies 17\,bytes (2-byte address + three 5-byte absolute timestamps) within a 90-byte frame buffer. With the 9-byte MAC header, only $\lfloor(90-9-2)/17\rfloor = 4$ devices fit before buffer overflow. The \texttt{pizzo00} fork reduces this to 12\,bytes/device using differential timestamps, reaching 6 anchors, but the broadcast POLL mechanism still causes RF collision between anchor replies.
+
+Critically, \emph{no existing library} uses the DW1000's first-path power registers for non-line-of-sight (NLOS) detection, despite the chip making this data available on every received frame.
+
+\subsection{Proposed Contribution}
+
+This project designs and implements a scalable UWB real-time locating system (RTLS) with the following distinguishing characteristics:
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Unlimited anchor scaling} via individual addressed DS-TWR exchanges (no shared frame buffer, no broadcast collisions).
+  \item \textbf{NLOS detection} using the DW1000 first-path power registers (FP\_AMPL1/2/3) --- the first open-source implementation of this capability.
+  \item \textbf{Physics-aware state estimation} using a Moving Horizon Estimator with Huber loss, physical room-boundary constraints, and speed limits.
+  \item \textbf{Full 6-DOF output} (XYZ position + RPY orientation) via tight fusion of UWB ranging and BNO085 IMU data.
+  \item \textbf{Anchor self-survey} via anchor-to-anchor ranging and Multidimensional Scaling, eliminating the need for manual coordinate measurement.
+\end{enumerate}
+
+%% =============================================================================
+\section{System Overview}
+%% =============================================================================
+
+\subsection{Hardware}
+
+\begin{keybox}[Hardware Specification]
+\begin{tabular}{ll}
+  \textbf{UWB module} & Makerfabs ESP32 UWB Pro with Display \\
+  \textbf{UWB chip}   & Decawave DW1000 (IEEE 802.15.4-2011 UWB) \\
+  \textbf{MCU}        & ESP32 (dual-core Xtensa LX6, 240\,MHz, Wi-Fi/BT) \\
+  \textbf{RF front-end} & PA/LNA amplifier ($\sim$200\,m outdoor range) \\
+  \textbf{Display}    & 1.3\,inch SSD1306 OLED (I\textsuperscript{2}C, pins SDA=4, SCL=5) \\
+  \textbf{IMU (planned)} & Bosch BNO085 via SPI \\
+  \textbf{Configuration} & 3--4 anchors (fixed) + 1 tag (mobile) \\
+  \textbf{Transport}  & Wi-Fi UDP to MATLAB host (192.168.x.x:5005) \\
+\end{tabular}
+\end{keybox}
+
+\subsection{Software Architecture}
+
+The system is split into two layers:
+
+\textbf{Firmware (Arduino/ESP32):} The tag performs round-robin DS-TWR ranging to each anchor, collects raw distances with quality metrics, and streams measurement packets over UDP. Anchors are purely passive responders. The tag never solves its own position.
+
+\textbf{Host (MATLAB):} All position computation, filtering, visualisation, and logging runs on the host PC. This separation means adding anchors requires only editing a JSON configuration file --- no firmware change. The firmware packet format is versioned and IMU-ready.
+
+The processing pipeline on the host is:
+\[
+\text{Raw ranges} \xrightarrow{\text{median filter}} \text{Filtered ranges} \xrightarrow{\text{NLOS weighting}} \text{Weighted ranges} \xrightarrow{\text{LM multilat.}} \text{Position} \xrightarrow{\text{EKF/MHE}} \hat{\vect{x}} \xrightarrow{\text{EMA}} \text{Output}
+\]
+
+%% =============================================================================
+\section{Objectives}
+%% =============================================================================
+
+\begin{enumerate}[leftmargin=2em, label=\textbf{O\arabic*.}]
+  \item Achieve XY positioning accuracy of $\leq 3$\,cm (1-$\sigma$) in LOS and $\leq 8$\,cm in soft NLOS conditions using 3--4 anchors.
+  \item Achieve Z-axis positioning accuracy of $\leq 5$\,cm with 4 anchors deployed at different heights.
+  \item Deliver continuous RPY orientation output at $\geq 50$\,Hz from BNO085 IMU fusion.
+  \item Maintain position tracking continuity during brief anchor occlusions ($\leq 3$\,s) using IMU dead-reckoning.
+  \item Support anchor self-survey: determine anchor positions to $\leq 2$\,cm without external measurement.
+  \item Demonstrate update rate $\geq 3$\,Hz for 3 anchors and $\geq 8$\,Hz in fast-mode operation.
+  \item Provide real-time NLOS detection per anchor using DW1000 channel impulse response diagnostics.
+  \item Remain compatible with low-cost hardware: total cost $<$ \$200 for a 4-anchor + 1-tag system.
+\end{enumerate}
+
+%% =============================================================================
+\section{Mathematical Foundations}
+%% =============================================================================
+
+This section develops the mathematics behind each processing stage in the pipeline.
+No prior knowledge of signal processing or estimation theory is assumed.
+\textbf{Notation:} Scalars are written in italic ($t$, $d$, $\tau$); column vectors in bold italic ($\vect{x}$, $\vect{p}$); matrices in bold upright ($\mat{F}$, $\mat{Q}$). The superscript $\Trans$ means transpose (turning a column into a row). $\|\vect{v}\|$ is the length of vector $\vect{v}$ (square root of sum of squares of its components). Subscripts $k$ index discrete time steps.
+
+%% ---------------------------------------------------------------------------
+\subsection{Double-Sided Two-Way Ranging (DS-TWR)}
+%% ---------------------------------------------------------------------------
+
+\begin{intubox}[Big picture --- what problem does DS-TWR solve?]
+We want to measure the distance between two radio modules by timing how long a signal takes to travel between them. The speed of light is known ($c = 3\times10^8$\,m/s), so $\text{distance} = c \times \text{time}$.
+
+The problem is that the clock inside each module runs at a slightly different speed. Even a tiny difference --- say 20 parts per million (ppm), which is 20 microseconds per second --- causes a large range error. If the tag waits 1\,ms before replying to an anchor, a 20\,ppm clock error makes it \emph{think} 1\,ms has passed when in reality $1\,\text{ms} \times (1 + 20\times10^{-6}) = 1.00002$\,ms has passed. That extra $0.00002$\,ms corresponds to $0.00002 \times 10^{-3} \times 3\times10^8 = 6$\,m of phantom range. Catastrophic.
+
+DS-TWR fixes this by performing a two-sided exchange so that the clock offsets cancel algebraically --- without either device needing to know its clock error.
+\end{intubox}
+
+\subsubsection{Message Exchange}
+
+The DS-TWR protocol uses four messages between a tag~(T) and anchor~(A), each recorded with a hardware timestamp:
+
+\begin{center}
+\begin{tabular}{clll}
+\toprule
+\textbf{Step} & \textbf{Direction} & \textbf{Frame} & \textbf{Timestamps captured} \\
+\midrule
+1 & T $\to$ A & \textsc{poll}         & $t_1$ (T transmits), $t_2$ (A receives) \\
+2 & A $\to$ T & \textsc{poll-ack}     & $t_3$ (A transmits), $t_4$ (T receives) \\
+3 & T $\to$ A & \textsc{range}        & $t_5$ (T transmits); carries $t_1, t_4, t_5$ \\
+4 & A $\to$ T & \textsc{range-report} & $t_6$ (A receives); anchor computes \& replies $d$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Think of it as a conversation: the tag says ``hello'' ($t_1$), the anchor hears it ($t_2$) and replies ($t_3$), the tag hears the reply ($t_4$) and sends a follow-up ($t_5$), and the anchor hears that ($t_6$). Both sides now have enough timing information to eliminate the clock offset.
+
+\subsubsection{Defining the Timing Intervals}
+
+From these six timestamps we form four intervals (all measured in DW1000 hardware ticks; one tick = 15.65\,ps):
+
+\begin{align}
+R_a &= t_4 - t_1 & &\text{tag's round-trip time (poll sent $\to$ ack received)} \\
+D_a &= t_3 - t_2 & &\text{anchor's reply delay (poll received $\to$ ack sent)} \\
+R_b &= t_6 - t_3 & &\text{anchor's round-trip time (ack sent $\to$ range received)} \\
+D_b &= t_5 - t_4 & &\text{tag's reply delay (ack received $\to$ range sent)}
+\end{align}
+
+If there were no clock error and the signal takes time $\tau$ to travel one way, then ideally $R_a = 2\tau + D_a$ and $R_b = 2\tau + D_b$. Each round-trip is twice the travel time plus the processing delay.
+
+\subsubsection{The DS-TWR Formula}
+
+Combining both round-trips cancels the processing delays and, crucially, the clock offsets:
+
+\begin{equation}
+\boxed{
+\tau_\text{ToF} = \frac{R_a R_b - D_a D_b}{R_a + R_b + D_a + D_b}
+}
+\label{eq:dstwr}
+\end{equation}
+
+\begin{intubox}[Why does this formula work?]
+Consider the ideal case (no clock error). Substitute $R_a = 2\tau + D_a$ and $R_b = 2\tau + D_b$:
+\[
+\tau_\text{ToF} = \frac{(2\tau+D_a)(2\tau+D_b) - D_a D_b}{(2\tau+D_a) + (2\tau+D_b) + D_a + D_b}
+= \frac{4\tau^2 + 2\tau(D_a+D_b)}{4\tau + 2(D_a+D_b)}
+= \frac{2\tau\bigl(2\tau + D_a + D_b\bigr)}{2\bigl(2\tau + D_a + D_b\bigr)} = \tau
+\]
+The processing delays $D_a$ and $D_b$ cancel completely, leaving the true one-way travel time. With clock errors, the algebra is more involved but the errors cancel to second order.
+\end{intubox}
+
+\textbf{Clock-offset cancellation (detailed).}
+Let $\varepsilon_T$ and $\varepsilon_A$ denote the fractional frequency offsets of the tag and anchor clocks (e.g.\ $\varepsilon = 20 \times 10^{-6}$ for a 20\,ppm crystal). Because the tag's clock runs fast or slow, all intervals measured by the tag are scaled: $R_a$ (measured by the tag) is really $(2\tau + D_a)(1 + \varepsilon_T)$, and $R_b$ (measured by the anchor) is $(2\tau + D_b)(1 + \varepsilon_A)$. Substituting into \cref{eq:dstwr} and keeping only first-order terms in $\varepsilon$ (since $\varepsilon^2 \approx 4\times10^{-10}$ is negligible):
+\[
+\tau_\text{ToF} \approx \tau \quad + \quad \underbrace{O(\varepsilon^2)}_{\approx\,0.1\,\text{mm}}
+\]
+The clock-offset terms vanish. The remaining error is at most $0.1$\,mm --- far below the chip's 4.7\,mm resolution.
+
+\begin{exbox}[Worked numerical example]
+Suppose a tag ranges to an anchor 3\,m away. Light travel time: $\tau = 3\,/\,(3\times10^8) = 10\,\text{ns} = 10\times10^{-9}$\,s. In DW1000 ticks ($1\,\text{tick} = 15.65\,\text{ps}$), this is $10\times10^{-9}\,/\,15.65\times10^{-12} \approx 639$\,ticks.
+
+Say the anchor takes 1\,ms to process and reply ($D_a = 1\,\text{ms}$), and the tag takes 1.2\,ms ($D_b = 1.2\,\text{ms}$). In ticks:
+\[
+D_a \approx 63\,900\,000, \quad D_b \approx 76\,700\,000
+\]
+\[
+R_a = 2\tau + D_a \approx 1278 + 63\,900\,000 = 63\,901\,278 \text{ ticks}
+\]
+\[
+R_b = 2\tau + D_b \approx 1278 + 76\,700\,000 = 76\,701\,278 \text{ ticks}
+\]
+\[
+\tau_\text{ToF} = \frac{R_a R_b - D_a D_b}{R_a + R_b + D_a + D_b}
+\approx \frac{63901278 \times 76701278 - 63900000 \times 76700000}{63901278 + 76701278 + 63900000 + 76700000}
+\]
+Numerically the cross-terms from $D_a D_b$ and the products cancel to leave $\approx 639$\,ticks, giving:
+$\hat{d} = 639 \times 15.65\times10^{-12} \times 3\times10^8 \approx 3.0$\,m. \checkmark
+\end{exbox}
+
+The measured distance is then:
+\begin{equation}
+\hat{d} = c \cdot \tau_\text{ToF} + b_\text{ant}
+\label{eq:dist}
+\end{equation}
+where $c = 2.998 \times 10^8$\,m/s and $b_\text{ant}$ is a per-board calibration offset (see below).
+
+\subsubsection{Antenna Delay Calibration}
+
+\begin{intubox}[Why calibration is needed]
+Every DW1000 chip has a slightly different internal wiring delay between the digital timestamp and the physical antenna. This delay is fixed for a given board but unknown. Without correcting it, every range measurement will be off by the same constant --- even with perfect DS-TWR maths. Calibration identifies this constant by comparing the measured distance against a known true distance and adjusting a register ($\Delta$) until they match.
+\end{intubox}
+
+The DW1000 applies a programmable antenna delay $\Delta$ (a 16-bit register value) that shifts the RX timestamp. Increasing $\Delta$ makes the chip think the signal arrived later, which reduces the computed ToF and thus the reported distance. Calibration finds:
+\[
+\Delta^* = \arg\min_\Delta \left(\mathbb{E}\left[\hat{d}(\Delta)\right] - d^\star\right)^2
+\]
+where $d^\star$ is the measured true distance (e.g.\ boards placed 7\,m apart with a tape measure). The relationship is monotone, so a binary search over $\Delta \in [15800, 16900]$ with 200 averaged measurements per candidate converges to the optimum in 14 iterations ($2^{14} = 16384$ covers the range). The residual uncertainty is $\pm 3$ ticks $\approx \pm 1.4$\,mm.
+
+%% ---------------------------------------------------------------------------
+\subsection{NLOS Detection via Channel Impulse Response}
+%% ---------------------------------------------------------------------------
+
+\begin{intubox}[Big picture --- detecting blocked paths]
+When the direct radio path between tag and anchor is blocked by a wall or large object, the signal still arrives --- but via a longer reflected route. Since we assume straight-line travel, the extra path length registers as a spurious positive distance error (the measured range is longer than the true range). This is called Non-Line-of-Sight (NLOS) error and is always positive.
+
+The DW1000 gives us a way to detect NLOS without any extra hardware: it separately reports how much energy arrived in the \emph{first} path (the direct or near-direct arrival) versus the \emph{total} received energy. If a lot of energy came in late (via reflections), the ratio between total and first-path power is large --- a reliable NLOS indicator.
+\end{intubox}
+
+\subsubsection{Physical Basis}
+
+When a radio pulse is transmitted, it spreads out in space. At the receiver, the DW1000 correlates the incoming signal against the known preamble sequence to build a \emph{Channel Impulse Response} (CIR) --- essentially a time-series showing when energy arrives and how much. In LOS conditions, one sharp peak appears at the direct-path delay. In NLOS, additional energy arrives later via reflected paths. The chip hardware captures the amplitude of the three samples straddling the first (earliest) peak, giving us a window into how strong the direct path is relative to all the scattered energy.
+
+\subsubsection{DW1000 Diagnostic Registers}
+
+After every received frame, the DW1000 populates these registers automatically:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{FP\_AMPL1, FP\_AMPL2, FP\_AMPL3} (register 0x12): three amplitude samples around the first-path leading edge. Together they represent the energy in the direct (first-arriving) signal.
+  \item \textbf{RXPACC} (register 0x10): the preamble accumulator count --- how many samples were averaged to build the CIR. Used as a normalisation factor.
+  \item \textbf{CIR\_PWR} (register 0x12): the total integrated channel power, including all reflections.
+\end{itemize}
+
+\subsubsection{Computing the NLOS Score}
+
+\textbf{Step 1 --- First-path power.} Combine the three amplitude samples and normalise by the accumulator count. The result is then converted to decibels (dBm), a logarithmic power scale where each 10\,dB corresponds to a factor of 10 in power:
+\begin{equation}
+P_\text{FP} = 10 \log_{10}\!\left(\frac{A_1^2 + A_2^2 + A_3^2}{N_\text{acc}^2}\right) - A_\text{const}
+\label{eq:fppower}
+\end{equation}
+Here $A_1, A_2, A_3$ are the FP\_AMPL values, $N_\text{acc}$ is RXPACC, and $A_\text{const}$ is a chip-specific constant ($121.74$\,dBm at 16\,MHz PRF; $113.77$\,dBm at 64\,MHz PRF) that accounts for the chip's internal gain.
+
+\textbf{Step 2 --- Total received power.} The total power $P_\text{RX}$ is read from CIR\_PWR via the driver function \texttt{DW1000.getReceivePower()}, using a similar log formula.
+
+\textbf{Step 3 --- NLOS score.} The NLOS score is simply the power gap between total and first-path:
+\begin{equation}
+\boxed{
+\Delta P_\text{NLOS} = P_\text{RX} - P_\text{FP}
+}
+\label{eq:nlos}
+\end{equation}
+
+In LOS, most of the energy arrives in the first path, so $P_\text{RX} \approx P_\text{FP}$ and $\Delta P_\text{NLOS}$ is small. In NLOS, extra reflected energy raises $P_\text{RX}$ while $P_\text{FP}$ stays low, widening the gap.
+
+\begin{center}
+\begin{tabular}{cll}
+\toprule
+\textbf{Score} & \textbf{Condition} & \textbf{Action} \\
+\midrule
+$< 3$\,dB & LOS. Direct path dominates. & Full weight in multilateration. \\
+$3$--$6$\,dB & Soft NLOS. Partial obstruction. & Reduce weight proportionally. \\
+$\geq 6$\,dB & Hard NLOS. Reflected path dominant. & Strong downweight or reject. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Range Bias Correction under NLOS}
+
+NLOS ranging error is \emph{always positive}: reflected and through-wall paths are geometrically longer than the direct path, so the measured distance always exceeds the true distance. Through-wall propagation also slows the signal by a factor of $\sqrt{\varepsilon_r}$, where $\varepsilon_r$ is the material's relative permittivity (concrete: $\varepsilon_r \approx 6$--$9$; drywall: $\varepsilon_r \approx 2$--$4$). A higher $\Delta P_\text{NLOS}$ score correlates with a larger positive bias, allowing an empirical correction:
+\begin{equation}
+b_\text{NLOS} \approx k_\text{NLOS} \cdot \max\!\left(0,\; \Delta P_\text{NLOS} - 3\,\text{dB}\right)
+\label{eq:biasnlos}
+\end{equation}
+with $k_\text{NLOS} \approx 0.02$--$0.05$\,m/dB (environment-dependent, tuned experimentally). This correction is subtracted from the measured range before multilateration.
+
+%% ---------------------------------------------------------------------------
+\subsection{Weighted Multilateration}
+%% ---------------------------------------------------------------------------
+
+\begin{intubox}[Big picture --- locating a point from distances]
+Multilateration is the process of finding a position given distances to several reference points (anchors). The key idea: if you know you are exactly 3\,m from anchor~1, you could be anywhere on a circle (or sphere in 3D) of radius 3\,m centred on anchor~1. A second anchor gives a second circle. In 2D, two circles intersect at two points. A third anchor breaks the ambiguity and gives a unique intersection --- your position.
+
+In practice, the measured distances have noise, so the circles do not intersect perfectly at one point. Instead of looking for an exact intersection, we find the position that is \emph{as close as possible} to being at the stated distance from each anchor --- a least-squares problem.
+\end{intubox}
+
+\subsubsection{Measurement Model}
+
+Let there be $N$ anchors at \emph{known} positions $\vect{a}_i \in \mathbb{R}^d$ (where $d=2$ for 2D or $d=3$ for 3D), and let $\hat{d}_i$ be the measured range to anchor $i$ after median filtering and bias correction. The true tag position $\vect{x} \in \mathbb{R}^d$ satisfies:
+\begin{equation}
+\hat{d}_i = \underbrace{\norm{\vect{x} - \vect{a}_i}}_{\text{true distance}} + \underbrace{e_i}_{\text{noise}}, \quad e_i \sim \mathcal{N}(0, \sigma_i^2)
+\label{eq:measurement}
+\end{equation}
+The term $\norm{\vect{x} - \vect{a}_i}$ is the Euclidean distance from tag to anchor~$i$ (the length of the straight line connecting them). The noise $e_i$ is modelled as Gaussian with standard deviation $\sigma_i$. Anchors flagged as NLOS have a larger $\sigma_i$:
+\begin{equation}
+\sigma_i = \sigma_\text{base} \cdot 10^{\Delta P_{\text{NLOS},i} / 20}
+\label{eq:sigma}
+\end{equation}
+A 10\,dB NLOS score multiplies the assumed noise standard deviation by $10^{0.5} \approx 3.16$, reducing the weight (see below) by a factor of 10. This is how the NLOS score flows from the radio measurement into the position solver.
+
+\subsubsection{Weighted Least-Squares Objective}
+
+Define the \emph{residual} for anchor $i$ as $r_i(\vect{x}) = \norm{\vect{x} - \vect{a}_i} - \hat{d}_i$ --- the difference between the distance implied by guess $\vect{x}$ and the measured range. If our guess is correct, $r_i = 0$. The position estimate minimises the weighted sum of squared residuals:
+\begin{equation}
+\hat{\vect{x}} = \arg\min_{\vect{x} \in \mathbb{R}^d} \sum_{i=1}^{N} w_i \, r_i(\vect{x})^2, \quad w_i = \frac{1}{\sigma_i^2}
+\label{eq:wls}
+\end{equation}
+Anchors with higher uncertainty $\sigma_i$ get a smaller weight $w_i$, so their contribution to the cost is reduced. This is the core of \emph{weighted least squares}: trust reliable measurements more.
+
+\subsubsection{Levenberg-Marquardt Solver}
+
+The objective \cref{eq:wls} is nonlinear (the distances $\norm{\vect{x}-\vect{a}_i}$ are nonlinear in $\vect{x}$), so there is no closed-form solution. We use the Levenberg-Marquardt (LM) algorithm, which iteratively improves a guess $\vect{x}_k$ by solving a linearised sub-problem at each step.
+
+\textbf{The Jacobian $\mat{J}$.} At the current guess $\vect{x}_k$, we compute the Jacobian matrix $\mat{J} \in \mathbb{R}^{N \times d}$. Each row is the gradient of one residual with respect to the position:
+\begin{equation}
+\mat{J}_i = \frac{\partial r_i}{\partial \vect{x}} = \frac{(\vect{x} - \vect{a}_i)\Trans}{\norm{\vect{x} - \vect{a}_i}}
+\label{eq:jacobian}
+\end{equation}
+This is just the unit vector pointing from anchor~$i$ toward the current guess $\vect{x}$. Intuitively, it says: ``if you move in direction $\mat{J}_i$, the distance to anchor $i$ increases by one unit.''
+
+\textbf{LM update step.} Let $\mat{W} = \diag(w_1,\ldots,w_N)$ be the diagonal weight matrix. The LM correction to the current guess is:
+\begin{equation}
+\vect{x}_{k+1} = \vect{x}_k - \left(\mat{J}\Trans \mat{W} \mat{J} + \lambda \diag(\mat{J}\Trans \mat{W} \mat{J})\right)^{-1} \mat{J}\Trans \mat{W} \vect{r}(\vect{x}_k)
+\label{eq:lm}
+\end{equation}
+The damping parameter $\lambda$ controls how cautious each step is. When $\lambda$ is large the step shrinks toward the direction of steepest descent (safe but slow). When $\lambda$ is small the step is a full Newton step (fast near the solution). LM automatically adjusts $\lambda$: increase it if the step made things worse, decrease it if it made things better. This gives it the robustness of gradient descent and the speed of Newton's method near the solution.
+
+\subsubsection{Robust Outlier Gating (MAD)}
+
+A single badly-NLOS anchor can dominate the cost and pull the estimate far from the truth. After a first LM solve, outlier anchors are detected using the \emph{Median Absolute Deviation} (MAD):
+\begin{equation}
+\hat{\sigma}_\text{robust} = 1.4826 \cdot \text{median}\!\left(\abs{r_i - \text{median}(\vect{r})}\right)
+\end{equation}
+\begin{intubox}[Why median instead of mean?]
+The regular standard deviation is sensitive to outliers: one anchor with a 2\,m NLOS error pulls the mean residual and inflates the standard deviation, masking the fact that other anchors are perfectly consistent. The \emph{median} ignores the extreme values and reports the typical residual. The constant 1.4826 converts the MAD to an equivalent standard deviation under Gaussian noise. Anchors whose residual deviates from the median by more than $K=2.5$ times this robust sigma are excluded and the solve repeats with the remaining anchors.
+\end{intubox}
+
+\subsubsection{Position Covariance}
+
+The uncertainty in the position estimate (needed by the Kalman filter) is approximated from the curvature of the cost function at the solution:
+\begin{equation}
+\mat{P}_\text{pos} \approx \sigma_\text{base}^2 \left(\mat{J}\Trans \mat{W} \mat{J}\right)^{-1}
+\label{eq:cov}
+\end{equation}
+Intuitively: if all the Jacobian rows point in similar directions (anchors roughly collinear), the matrix $\mat{J}\Trans\mat{W}\mat{J}$ is nearly singular and its inverse is large --- meaning the position is poorly determined in some directions. If the anchors surround the tag from all sides, the matrix is well-conditioned and the position uncertainty is small. This is the mathematical expression of the ``Dilution of Precision'' concept familiar from GPS.
+
+\subsubsection{GPS-Style Simultaneous Bias Estimation}
+
+\begin{intubox}[What GPS does that basic ranging does not]
+In GPS, the receiver's clock is imprecise, so every pseudorange measurement has the same unknown clock offset added to it. GPS solves for position \emph{and} this offset simultaneously by using one extra satellite beyond the minimum. The offset term cancels in pairwise differences between satellites, leaving only geometry.
+
+We face the same problem: an uncalibrated or temperature-drifted tag clock adds the same offset $\delta$ to all measured ranges. With $N \geq d+2$ anchors (one extra beyond the minimum needed for position), we can estimate $\delta$ alongside position.
+\end{intubox}
+
+The augmented measurement model is:
+\begin{equation}
+\hat{d}_i = \norm{\vect{x} - \vect{a}_i} + \delta + e_i
+\end{equation}
+The augmented Jacobian gains an extra column of ones (because moving $\delta$ by 1 shifts all residuals by 1):
+\begin{equation}
+\tilde{\mat{J}}_i = \left[\mat{J}_i,\; 1\right]
+\label{eq:jacaug}
+\end{equation}
+The LM solver treats $\tilde{\vect{x}} = [\vect{x}\Trans, \delta]\Trans$ as the unknown and proceeds identically.
+
+\begin{notebox}
+\textbf{Geometric limitation with minimum anchors.} If we try this with exactly $d+1$ anchors (e.g.\ 3 anchors in 2D), the $\delta$ estimate is not reliable. Subtracting any two range equations cancels $\delta$ exactly, so all the information about position comes from differences, not absolute ranges. The solver becomes ill-conditioned near the anchor centroid. For this reason, $\delta$-solve is only enabled when $N \geq d+2$.
+\end{notebox}
+
+%% ---------------------------------------------------------------------------
+\subsection{State Estimation}
+%% ---------------------------------------------------------------------------
+
+\subsubsection{Extended Kalman Filter (EKF)}
+
+\begin{intubox}[Big picture --- the Kalman filter idea]
+The multilateration solver gives a new position estimate every time a ranging sweep completes (roughly 3\,Hz). The Kalman filter is a principled way to \emph{smooth} these noisy position estimates using knowledge of how things physically move.
+
+The filter alternates between two steps every time interval $\Delta t$:
+\begin{enumerate}[leftmargin=2em, topsep=2pt]
+  \item \textbf{Predict.} ``Given where the tag was and how fast it was moving, where should it be now?'' The filter projects the state forward in time using Newton's equations.
+  \item \textbf{Update.} ``A new measurement arrived. How much should I correct my prediction?'' The correction is proportional to how much we trust the measurement versus the physics model.
+\end{enumerate}
+The filter tracks not just the state estimate but also its \emph{uncertainty} (the covariance matrix $\mat{P}$). Uncertainty grows during prediction (we are less sure of where the tag is without measurements) and shrinks during update (new data reduces uncertainty).
+\end{intubox}
+
+\paragraph{State vector.} The EKF state packs all unknowns into a single column vector:
+\begin{equation}
+\vect{x} = \begin{bmatrix} \vect{p} \\ \vect{v} \\ \vect{a} \\ \delta \end{bmatrix} \in \mathbb{R}^{3d+1}
+\end{equation}
+where $\vect{p} \in \mathbb{R}^d$ is position (e.g.\ $[x,y]$ in 2D), $\vect{v} \in \mathbb{R}^d$ is velocity (how fast position is changing), $\vect{a} \in \mathbb{R}^d$ is acceleration (how fast velocity is changing), and $\delta \in \mathbb{R}$ is the slowly-varying range bias from \S4.3.5.
+
+\paragraph{Transition matrix $\mat{F}$ (predict step).} The state evolves according to Newton's kinematic equations. If the acceleration stays roughly constant over one time step $\Delta t$, then:
+\[
+p_\text{new} = p + v\,\Delta t + \tfrac{1}{2}a\,\Delta t^2, \quad v_\text{new} = v + a\,\Delta t, \quad a_\text{new} \approx a, \quad \delta_\text{new} \approx \delta
+\]
+Written in matrix form for the full state vector:
+\begin{equation}
+\mat{F} = \begin{bmatrix}
+\mat{I}_d & \Delta t\,\mat{I}_d & \tfrac{\Delta t^2}{2}\mat{I}_d & \vect{0} \\
+\mat{0}   & \mat{I}_d           & \Delta t\,\mat{I}_d            & \vect{0} \\
+\mat{0}   & \mat{0}             & \mat{I}_d                      & \vect{0} \\
+0         & 0                   & 0                              & 1
+\end{bmatrix}
+\end{equation}
+Each block row corresponds to one sub-state (position, velocity, acceleration, bias). The top-left $3\times3$ block in $d=1$ reads: new position = old position $\times 1$ + old velocity $\times \Delta t$ + old acceleration $\times \Delta t^2/2$. This is just kinematics.
+
+\paragraph{Process noise $\mat{Q}$ (model uncertainty).} We know the tag does not follow perfect constant-acceleration motion. Random forces (sudden stops, direction changes) introduce unpredictable acceleration changes. The matrix $\mat{Q}$ models this uncertainty. Larger $\mat{Q}$ means we trust the physics model less and will weight new measurements more heavily:
+\begin{equation}
+\mat{Q} = q_j \begin{bmatrix}
+\tfrac{\Delta t^5}{20}\mat{I} & \tfrac{\Delta t^4}{8}\mat{I} & \tfrac{\Delta t^3}{6}\mat{I} & \vect{0} \\
+\tfrac{\Delta t^4}{8}\mat{I}  & \tfrac{\Delta t^3}{3}\mat{I} & \tfrac{\Delta t^2}{2}\mat{I} & \vect{0} \\
+\tfrac{\Delta t^3}{6}\mat{I}  & \tfrac{\Delta t^2}{2}\mat{I} & \Delta t\,\mat{I}             & \vect{0} \\
+\vect{0} & \vect{0} & \vect{0} & q_\delta\,\Delta t
+\end{bmatrix}
+\end{equation}
+The scalar $q_j$ (jerk power spectral density, tuned via the \texttt{EKF\_Q\_ACCEL} slider) controls the trade-off: \emph{low $q_j$} makes the filter trust its kinematic model and produce smooth but potentially lagging output; \emph{high $q_j$} makes it follow measurements closely but with more noise.
+
+\paragraph{Measurement model for tight coupling.} Rather than feeding the multilaterated position directly into the filter, we can feed the raw ranges and let the filter compute the expected ranges from its own state estimate. For anchor~$i$ at position $\vect{a}_i$, the predicted range is:
+\begin{equation}
+h_i(\vect{x}) = \norm{\vect{p} - \vect{a}_i} + \delta
+\label{eq:measmodel}
+\end{equation}
+The linearised measurement Jacobian (gradient of $h_i$ with respect to the state) is:
+\begin{equation}
+\mat{H}_i = \left[\underbrace{\frac{(\vect{p} - \vect{a}_i)\Trans}{\norm{\vect{p} - \vect{a}_i}}}_{\text{unit vector toward anchor}},\; \underbrace{\vect{0}_{1 \times 2d}}_{\text{vel/acc terms}},\; \underbrace{1}_{\text{bias term}}\right]
+\end{equation}
+The first part is the unit vector pointing from the tag toward anchor $i$; moving the tag by 1\,m in that direction changes the range to anchor $i$ by exactly 1\,m.
+
+\paragraph{Kalman equations.} At each time step the filter runs the following sequence:
+\begin{align}
+\text{Predict:}\quad & \hat{\vect{x}}_{k|k-1} = \mat{F}\hat{\vect{x}}_{k-1|k-1}
+ && \text{(project state forward)} \\
+& \mat{P}_{k|k-1} = \mat{F}\mat{P}_{k-1|k-1}\mat{F}\Trans + \mat{Q}
+ && \text{(uncertainty grows with time)} \\[4pt]
+\text{Update:}\quad  & \mat{S}_k = \mat{H}_k \mat{P}_{k|k-1} \mat{H}_k\Trans + \mat{R}_k
+ && \text{(innovation covariance)} \\
+& \mat{K}_k = \mat{P}_{k|k-1} \mat{H}_k\Trans \mat{S}_k^{-1}
+ && \text{(Kalman gain)} \\
+& \hat{\vect{x}}_{k|k} = \hat{\vect{x}}_{k|k-1} + \mat{K}_k \bigl(\vect{z}_k - h(\hat{\vect{x}}_{k|k-1})\bigr)
+ && \text{(correct estimate)} \\
+& \mat{P}_{k|k} = (\mat{I} - \mat{K}_k \mat{H}_k)\mat{P}_{k|k-1}
+ && \text{(uncertainty shrinks after update)}
+\end{align}
+
+\begin{intubox}[Understanding the Kalman gain $\mat{K}$]
+The Kalman gain $\mat{K}$ decides how much to correct the prediction when a measurement arrives. It is automatically computed from two competing uncertainties:
+\begin{itemize}[leftmargin=1.5em, topsep=2pt]
+  \item $\mat{P}_{k|k-1}$: how uncertain we are in our \emph{prediction}. Large $\mat{P}$ means ``I am not confident where the tag is.''
+  \item $\mat{R}_k$: how uncertain we are in the \emph{measurement} (the covariance from the multilaterator, \cref{eq:cov}). Large $\mat{R}$ means ``I do not trust this measurement.''
+\end{itemize}
+If the prediction is uncertain (large $\mat{P}$) and the measurement is reliable (small $\mat{R}$), then $\mat{K}$ is large: the filter corrects strongly toward the measurement. If the prediction is confident (small $\mat{P}$) and the measurement is noisy (large $\mat{R}$), $\mat{K}$ is small: the filter barely moves. This is the optimal weighted combination.
+\end{intubox}
+
+The subscript notation $\hat{\vect{x}}_{k|k-1}$ means ``estimate of state at time $k$, using data up to time $k-1$'' (prediction). $\hat{\vect{x}}_{k|k}$ means ``estimate at time $k$, after incorporating measurement at time $k$'' (updated).
+
+\subsubsection{Moving Horizon Estimator (MHE)}
+
+\begin{intubox}[Big picture --- looking at a window of past data]
+The Kalman filter processes one measurement at a time and maintains a compact summary (mean and covariance). The Moving Horizon Estimator takes a different approach: at every time step, it looks at the last $N$ measurements simultaneously and solves one large optimisation problem to find the trajectory that best fits all of them together.
+
+This is more computationally expensive but offers two key advantages:
+\begin{enumerate}[leftmargin=1.5em, topsep=2pt]
+  \item \textbf{Hard constraints.} The solution is forced to lie inside the room and respect a speed limit. The Kalman filter cannot enforce these.
+  \item \textbf{Robustness to outliers.} Using the Huber loss (described below), the MHE naturally reduces the influence of NLOS-corrupted measurements without explicitly rejecting them.
+\end{enumerate}
+\end{intubox}
+
+At time step $k$, the MHE considers the window of past states $\{\vect{x}_{k-N+1}, \ldots, \vect{x}_k\}$ and minimises:
+
+\begin{equation}
+\min_{\{\vect{x}_t\}} \underbrace{\norm{\vect{x}_{k-N+1} - \bar{\vect{x}}_{k-N+1}}_{\mat{P}_\text{arr}^{-1}}^2}_{\substack{\text{arrival cost}\\\text{(memory of the past)}}} + \underbrace{\sum_{t=k-N+2}^{k} \norm{\vect{x}_t - \mat{F}\vect{x}_{t-1}}_{\mat{Q}^{-1}}^2}_{\substack{\text{dynamics residuals}\\\text{(penalises unphysical jumps)}}} + \underbrace{\sum_{t}\sum_{i} \rho_\delta\!\left(\norm{\vect{p}_t - \vect{a}_i} - \hat{d}_{t,i}\right)}_{\substack{\text{range residuals}\\\text{(fit the measurements)}}}
+\label{eq:mhe}
+\end{equation}
+
+where $\norm{\vect{v}}_{\mat{M}}^2 = \vect{v}\Trans\mat{M}\vect{v}$ is a weighted norm. The three terms penalise:
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Arrival cost:} deviation of the oldest state in the window from the summary $\bar{\vect{x}}_{k-N+1}$ carried forward from the previous window. This compactly encodes all information from before the window.
+  \item \textbf{Dynamics residuals:} how much each consecutive pair of states violates the physics model $\vect{x}_t \approx \mat{F}\vect{x}_{t-1}$. Large jumps are penalised.
+  \item \textbf{Range residuals:} how well the estimated positions fit the UWB range measurements, using the Huber loss $\rho_\delta$.
+\end{enumerate}
+
+\textbf{The Huber loss $\rho_\delta$.} Standard least squares penalises errors quadratically: doubling the error quadruples the penalty. This means a single large NLOS error can dominate the whole objective. The Huber loss switches to a linear penalty for large errors, limiting the influence of any single outlier:
+\begin{equation}
+\rho_\delta(e) = \begin{cases}
+\dfrac{1}{2}e^2 & \text{if } \abs{e} \leq \delta \\[6pt]
+\delta\!\left(\abs{e} - \dfrac{\delta}{2}\right) & \text{if } \abs{e} > \delta
+\end{cases}
+\label{eq:huber}
+\end{equation}
+
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+\textbf{Residual $|e|$} & \textbf{Squared loss} & \textbf{Huber loss ($\delta=0.15$\,m)} \\
+\midrule
+0.05\,m & 0.0025 & 0.00125 (quadratic) \\
+0.15\,m & 0.0225 & 0.01125 (quadratic, at threshold) \\
+0.30\,m & 0.0900 & 0.01688 (linear; only $12\times$ larger than 0.05\,m) \\
+1.00\,m & 1.0000 & 0.13500 (linear; only $108\times$ larger than 0.05\,m) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+An NLOS anchor with a 1\,m error contributes 108$\times$ less than a perfect anchor under Huber loss, versus $400\times$ more under squared loss.
+
+\textbf{Constraints:}
+\begin{align}
+\vect{p}_\text{min} &\leq \vect{p}_t \leq \vect{p}_\text{max} && \text{(room boundary, hard constraint)} \label{eq:bound}\\
+\norm{\vect{v}_t}_2 &\leq v_\text{max} && \text{(speed limit, hard constraint)} \label{eq:speed}
+\end{align}
+
+These hard constraints prevent the estimator from placing the tag outside the room or moving it at superhuman speed, which can happen during anchor occlusions if the estimator is unconstrained.
+
+\textbf{Computational cost.} With window $N=6$, space $d=3$, and $N_a=4$ anchors, the problem has $N\times(3d+1)=60$ unknowns and is solved by \texttt{fmincon} (MATLAB interior-point method) in 2--5\,ms per step --- well inside the 333\,ms between UWB sweeps.
+
+\begin{table}[ht]
+\centering
+\caption{EKF vs.\ MHE comparison}
+\begin{tabular}{lll}
+\toprule
+\textbf{Property} & \textbf{EKF} & \textbf{MHE} \\
+\midrule
+NLOS handling & Pre-gating required & Huber loss absorbs outliers \\
+Physical constraints & None & Room boundary + speed (hard) \\
+Nonlinearity & Jacobian linearisation & Solved exactly \\
+Lag & Zero & $N/2$ steps ($\approx 1$\,s at $N=6$) \\
+Compute per step & Trivial ($\mu$s) & 2--5\,ms (fmincon) \\
+Sensitivity to initialisation & Moderate & Low (window smooths errors) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%% ---------------------------------------------------------------------------
+\subsection{IMU Fusion and Orientation Estimation}
+%% ---------------------------------------------------------------------------
+
+\begin{intubox}[Big picture --- bridging the gap between UWB updates]
+UWB provides a position fix roughly every 300\,ms. An IMU (inertial measurement unit) measures angular rates (gyroscope) and linear acceleration at 100\,Hz. Between UWB updates, the IMU provides 30 intermediate position estimates using dead-reckoning (integrating acceleration twice). At each UWB update, the integrated position is corrected. Together, UWB provides the absolute reference while the IMU provides smooth high-rate motion between fixes.
+
+The BNO085 also outputs orientation (roll/pitch/yaw) at 100\,Hz directly, which UWB alone cannot provide.
+\end{intubox}
+
+\subsubsection{Why Quaternions?}
+
+Orientation in 3D can be parameterised in several ways. The most intuitive is three Euler angles (roll $\phi$, pitch $\theta$, yaw $\psi$) --- tilt left/right, tilt forward/back, and turn left/right. However, Euler angles have a singularity called \emph{gimbal lock}: when the pitch angle reaches $\pm90^\circ$, roll and yaw become indistinguishable and one degree of freedom is lost. This causes numerical instability in tracking algorithms.
+
+Quaternions avoid this by representing orientation as four numbers $[q_w, q_x, q_y, q_z]$ with the constraint $q_w^2 + q_x^2 + q_y^2 + q_z^2 = 1$. The geometric interpretation: every rotation can be described as a rotation by angle $\theta$ about a unit axis $[\hat{n}_x, \hat{n}_y, \hat{n}_z]$, encoded as:
+\[
+q_w = \cos(\theta/2), \quad q_x = \hat{n}_x \sin(\theta/2), \quad q_y = \hat{n}_y \sin(\theta/2), \quad q_z = \hat{n}_z \sin(\theta/2)
+\]
+For example, a $90^\circ$ yaw (rotation about the Z axis) gives $\vect{q} = [\cos 45^\circ, 0, 0, \sin 45^\circ] = [0.707, 0, 0, 0.707]$.
+
+The BNO085 handles all quaternion arithmetic internally and outputs a pre-filtered quaternion, so the user never needs to implement quaternion integration from scratch.
+
+\subsubsection{Rotation Matrix from Quaternion}
+
+To transform a vector from the body frame (relative to the sensor) into the world frame (fixed to the room), use the rotation matrix:
+\begin{equation}
+\mat{R}(\vect{q}) = \begin{bmatrix}
+1 - 2(q_y^2 + q_z^2) & 2(q_x q_y - q_w q_z) & 2(q_x q_z + q_w q_y) \\
+2(q_x q_y + q_w q_z) & 1 - 2(q_x^2 + q_z^2) & 2(q_y q_z - q_w q_x) \\
+2(q_x q_z - q_w q_y) & 2(q_y q_z + q_w q_x) & 1 - 2(q_x^2 + q_y^2)
+\end{bmatrix}
+\end{equation}
+Each element is a quadratic combination of the quaternion components. This $3\times3$ matrix rotates any body-frame vector into world coordinates.
+
+\subsubsection{Quaternion Kinematics (How Orientation Updates)}
+
+If the gyroscope reports a body angular rate $\vect{\omega}^b = [\omega_x, \omega_y, \omega_z]\Trans$ (in rad/s), the quaternion evolves according to:
+\begin{equation}
+\dot{\vect{q}} = \frac{1}{2} \vect{q} \otimes \begin{bmatrix}0 \\ \vect{\omega}^b\end{bmatrix}
+\label{eq:qdot}
+\end{equation}
+where $\otimes$ is the Hamilton product (a specific rule for multiplying two quaternions, analogous to cross-product for vectors). The $0$ in the first slot makes the combined object a \emph{pure quaternion} compatible with the product rule.
+
+For a finite time step $\Delta t$, the exact discrete integration is:
+\begin{equation}
+\vect{q}_{k+1} = \vect{q}_k \otimes \begin{bmatrix}\cos\!\left(\tfrac{\Delta t}{2}\norm{\vect{\omega}^b_k}\right) \\[4pt] \dfrac{\vect{\omega}^b_k}{\norm{\vect{\omega}^b_k}}\sin\!\left(\tfrac{\Delta t}{2}\norm{\vect{\omega}^b_k}\right)\end{bmatrix}
+\label{eq:qprop}
+\end{equation}
+This rotates the current orientation by the incremental rotation corresponding to spinning at rate $\vect{\omega}^b$ for time $\Delta t$. The magnitude of the rotation angle is $\norm{\vect{\omega}^b_k}\,\Delta t$ radians.
+
+\subsubsection{IMU-Driven Position Propagation}
+
+The BNO085 also outputs linear acceleration $\vect{a}^b$ (acceleration with gravity removed) measured in the body frame. To integrate it into world-frame position, first rotate it:
+\[
+\vect{a}^w = \mat{R}(\vect{q})\,\vect{a}^b
+\]
+Then apply Newton's equations over one IMU time step $\Delta t = 10$\,ms (at 100\,Hz):
+\begin{align}
+\vect{p}_{k+1} &= \vect{p}_k + \vect{v}_k\,\Delta t + \tfrac{1}{2}\vect{a}^w_k\,\Delta t^2 \\
+\vect{v}_{k+1} &= \vect{v}_k + \vect{a}^w_k\,\Delta t
+\end{align}
+Between two UWB sweeps (300\,ms apart) the IMU runs 30 propagation steps, providing smooth position estimates throughout. When the next UWB measurement arrives, the Kalman update corrects the accumulated drift.
+
+\subsubsection{Loose vs.\ Tight Coupling}
+
+\textbf{Loose coupling} first runs multilateration to get a position, then feeds that position into the EKF as the measurement $\vect{z}_k = \hat{\vect{p}}_\text{multilat}$. It is easier to implement but throws away information: the multilateration step collapses the individual range errors into a single covariance, losing the directional information about which anchors were reliable.
+
+\textbf{Tight coupling} feeds raw UWB ranges $\hat{d}_i$ directly into the EKF/MHE as separate measurements via the model of \cref{eq:measmodel}. This is the recommended approach because:
+\begin{itemize}[leftmargin=2em]
+  \item It can use partial anchor sets (e.g.\ 2 of 4 anchors visible) without changing any equations.
+  \item Each anchor's quality metric flows directly into the measurement weight $\mat{R}_k$.
+  \item The Jacobian $\mat{H}_i$ automatically captures the geometry of each anchor.
+\end{itemize}
+
+\subsubsection{Roll, Pitch, and Yaw from Quaternion}
+
+\begin{intubox}[Physical meaning of roll, pitch, yaw]
+\textbf{Roll} ($\phi$): rotation about the forward axis (tilting left/right like an aircraft banking). \textbf{Pitch} ($\theta$): rotation about the side axis (nose up/down). \textbf{Yaw} ($\psi$): rotation about the vertical axis (turning left/right on a compass heading). Together these three angles fully describe orientation in 3D.
+\end{intubox}
+
+The Euler angles in ZYX convention are extracted from the quaternion by:
+\begin{align}
+\phi   &= \text{atan2}\!\left(2(q_w q_x + q_y q_z),\; 1 - 2(q_x^2 + q_y^2)\right) \label{eq:roll}\\
+\theta &= \arcsin\!\left(2(q_w q_y - q_z q_x)\right) \label{eq:pitch}\\
+\psi   &= \text{atan2}\!\left(2(q_w q_z + q_x q_y),\; 1 - 2(q_y^2 + q_z^2)\right) \label{eq:yaw}
+\end{align}
+The function $\text{atan2}(y,x)$ returns the angle whose sine is proportional to $y$ and whose cosine is proportional to $x$, in the correct quadrant. The $\arcsin$ for pitch is why pitch is limited to $\pm90^\circ$ in this convention.
+
+The BNO085 runs its ARVR Stabilised Rotation Vector mode, which fuses accelerometer, gyroscope, and magnetometer internally at 400\,Hz. The magnetometer provides an absolute heading reference (like a compass), preventing the yaw drift that gyroscope integration alone would accumulate over time.
+
+%% ---------------------------------------------------------------------------
+\subsection{Anchor Self-Survey via Multidimensional Scaling}
+%% ---------------------------------------------------------------------------
+
+\begin{intubox}[Big picture --- building a map from pairwise distances]
+Normally we assume the anchor positions are known (measured with a tape measure or laser rangefinder and entered into the config file). Any measurement error directly biases all subsequent position estimates.
+
+Anchor self-survey replaces manual measurement: the anchors range to \emph{each other} and a mathematical procedure called Multidimensional Scaling (MDS) recovers their 2D or 3D layout automatically. The analogy: given a table of driving distances between cities, MDS reconstructs a map of those cities without any compass or coordinate system.
+\end{intubox}
+
+\subsubsection{Data Collection}
+
+With $N$ anchors, there are $\binom{N}{2} = \frac{N(N-1)}{2}$ unique pairs. For 4 anchors this is 6 pairs. Each anchor temporarily becomes a ranging initiator and ranges to every other anchor. Each pairwise distance is averaged over $M=100$ measurements to reduce noise: the averaged uncertainty is $\sigma_d/\sqrt{M} \approx 5\,\text{cm}/\sqrt{100} = 0.5$\,cm.
+
+\subsubsection{Classical Multidimensional Scaling}
+
+\textbf{Step 1 --- Build the squared-distance matrix.} Arrange all pairwise distances $\hat{d}_{ij}$ into a symmetric $N\times N$ matrix and square each entry:
+\[
+D^{(2)}_{ij} = \hat{d}_{ij}^2
+\]
+The diagonal entries are zero (distance from any anchor to itself is zero).
+
+\textbf{Step 2 --- Double-centering.} The matrix $\mat{D}^{(2)}$ encodes distances relative to the centroid of the anchor cloud, but it is not centred. Apply the centering matrix $\mat{J} = \mat{I}_N - \tfrac{1}{N}\vect{1}\vect{1}\Trans$ (which subtracts row and column means):
+\begin{equation}
+\mat{B} = -\tfrac{1}{2}\,\mat{J}\,\mat{D}^{(2)}\,\mat{J}
+\label{eq:mds}
+\end{equation}
+
+\begin{intubox}[Why double-centering?]
+If the anchor positions are stored in a matrix $\mat{X}$ (rows = anchors, columns = coordinates), then the squared distances satisfy $D_{ij}^{(2)} = \norm{\vect{x}_i - \vect{x}_j}^2 = \norm{\vect{x}_i}^2 - 2\vect{x}_i\cdot\vect{x}_j + \norm{\vect{x}_j}^2$. The double-centering operation \cref{eq:mds} algebraically cancels the $\norm{\vect{x}_i}^2$ and $\norm{\vect{x}_j}^2$ terms, leaving $B_{ij} = \vect{x}_i \cdot \vect{x}_j$ --- the dot products between anchor positions. In matrix form: $\mat{B} = \mat{X}\mat{X}\Trans$. We have converted distances into dot products, from which positions can be extracted by factorisation.
+\end{intubox}
+
+\textbf{Step 3 --- Eigendecomposition.} Factor $\mat{B}$ into eigenvectors and eigenvalues: $\mat{B} = \mat{V}\mat{\Lambda}\mat{V}\Trans$. If the distances were exact, exactly $d$ eigenvalues would be non-zero (one per spatial dimension). Take the $d$ largest:
+\begin{equation}
+\hat{\mat{X}} = \mat{V}_d\,\mat{\Lambda}_d^{1/2}
+\label{eq:mdssoln}
+\end{equation}
+where $\mat{V}_d$ contains the $d$ leading eigenvectors as columns and $\mat{\Lambda}_d = \diag(\lambda_1,\ldots,\lambda_d)$. Each row of $\hat{\mat{X}}$ is the recovered position of one anchor.
+
+\begin{exbox}[Numerical example: 3 anchors in 2D]
+Suppose the true anchor positions are $\vect{a}_1 = (0,0)$, $\vect{a}_2 = (3,0)$, $\vect{a}_3 = (1.5,2.6)$ metres. The true pairwise distances are: $d_{12}=3$\,m, $d_{13}=3$\,m, $d_{23}=3$\,m (equilateral triangle, side 3\,m).
+\[
+\mat{D}^{(2)} = \begin{bmatrix} 0 & 9 & 9 \\ 9 & 0 & 9 \\ 9 & 9 & 0 \end{bmatrix}
+\]
+After double-centering: $\mat{B} = \begin{bmatrix} 6 & -3 & -3 \\ -3 & 6 & -3 \\ -3 & -3 & 6 \end{bmatrix}$ (scaled by $1/3$ internally). Eigendecomposition yields 2 non-zero eigenvalues. Taking the top 2 and applying \cref{eq:mdssoln} recovers the anchor layout up to rotation/reflection. After frame fixation, the output matches the true positions.
+\end{exbox}
+
+\subsubsection{Coordinate Frame Fixation}
+
+MDS recovers the shape but not the orientation or position (the solution is ambiguous up to rigid-body motion). Three conventions fix a unique coordinate frame:
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Translation:} Subtract the position of anchor 1 from all positions, so anchor 1 becomes the origin $(0,0)$ or $(0,0,0)$.
+  \item \textbf{Rotation:} Rotate the layout so that anchor 2 lies on the positive X axis.
+  \item \textbf{Reflection:} If anchor 3 ends up below the X axis (negative Y), flip the Y axis.
+\end{enumerate}
+The result is written to \texttt{config/anchors.json} for immediate use by the localisation pipeline.
+
+\subsubsection{Noise Propagation}
+
+Each pairwise distance is the mean of $M=100$ measurements. If individual measurement noise is $\sigma_d \approx 5$\,cm, the mean has standard deviation $\sigma_d/\sqrt{M} = 0.5$\,cm. Classical MDS propagates this to a position uncertainty of roughly $0.5$\,cm per anchor coordinate --- within our $\leq 2$\,cm self-survey target.
+
+%% =============================================================================
+\section{Implementation Roadmap}
+%% =============================================================================
+
+The system is developed in six phases, each independently testable:
+
+\begin{table}[ht]
+\centering
+\caption{Implementation phases and key items}
+\begin{tabular}{cllc}
+\toprule
+\textbf{Phase} & \textbf{Item} & \textbf{Description} & \textbf{Difficulty} \\
+\midrule
+\multirow{5}{*}{1 --- Foundation}
+ & 1.0 & Switch to 64\,MHz PRF (accuracy mode) & Easy \\
+ & 1.1 & Better calibration (200 samples, multi-distance) & Easy \\
+ & 1.2 & Adaptive polling: skip dead anchors & Easy \\
+ & 1.3 & Faster sweep rate (reduce reply delay) & Medium \\
+ & 1.5 & Anchor self-survey + auto \texttt{anchors.json} & Medium \\
+\midrule
+\multirow{5}{*}{2 --- Ranging}
+ & 2.1 & FP\_POWER NLOS detection (firmware + wire format) & Medium \\
+ & 2.2 & Weighted multilateration (NLOS score) & Medium \\
+ & 2.3 & NLOS range bias correction slider & Easy \\
+ & 2.4 & Per-anchor diagnostics panel & Easy \\
+ & 2.5 & GPS-style $\delta$-solve (4+ anchors) & Medium \\
+\midrule
+\multirow{4}{*}{3 --- Estimation}
+ & 3.1 & Constant-acceleration EKF & Medium \\
+ & 3.2 & $\delta$ as EKF state (bias estimation) & Med-Hard \\
+ & 3.3 & Moving Horizon Estimator & Hard \\
+ & 3.4 & Hybrid EKF + MHE & Medium \\
+\midrule
+\multirow{5}{*}{4 --- 3D + RPY}
+ & 4.1 & 4th anchor + 3D configuration & Easy \\
+ & 4.2 & BNO085 SensorImu (SPI) & Medium \\
+ & 4.3 & RPY output from quaternion & Easy \\
+ & 4.4 & Loose coupling: IMU-aided EKF & Hard \\
+ & 4.5 & Tight coupling: raw ranges + IMU in MHE & Very Hard \\
+\midrule
+\multirow{4}{*}{5 --- Hardening}
+ & 5.1 & Deep sleep on anchors & Medium \\
+ & 5.2 & DW1000 driver error handling & Medium \\
+ & 5.3 & Temperature compensation & Medium \\
+ & 5.4 & Online self-calibration & Hard \\
+\midrule
+\multirow{3}{*}{6 --- Scale}
+ & 6.1 & Multi-tag TDMA superframe & Hard \\
+ & 6.2 & Differential timestamp encoding & Hard \\
+ & 6.3 & On-device 2D solve (OLED) & Medium \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%% =============================================================================
+\section{Expected Performance}
+%% =============================================================================
+
+\begin{table}[ht]
+\centering
+\caption{Expected accuracy progression through implementation phases}
+\begin{tabular}{clllll}
+\toprule
+\textbf{After Phase} & \textbf{XY accuracy} & \textbf{Z accuracy} & \textbf{RPY} & \textbf{Rate} & \textbf{Key enabler} \\
+\midrule
+Current & 3--10\,cm & --- & --- & 3\,Hz & Baseline \\
+Phase 1 & 2--6\,cm  & --- & --- & 4--8\,Hz & Calibration + PRF \\
+Phase 2 & 1--4\,cm  & --- & --- & 4--8\,Hz & NLOS detection \\
+Phase 3 & 1--3\,cm  & --- & --- & 4--8\,Hz & MHE + CA-EKF \\
+Phase 4 & 1--3\,cm  & 2--5\,cm & 3--5$^\circ$ & 100\,Hz RPY & IMU fusion \\
+Phase 5 & 1--3\,cm  & 2--5\,cm & 3--5$^\circ$ & 100\,Hz RPY & Reliability \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The theoretical floor for the DW1000 chip is approximately 1--2\,cm in perfect LOS conditions (limited by the 15.65\,ps timestamp resolution and residual crystal asymmetry). Practical indoor environments with multipath and occasional NLOS will see 2--5\,cm as the sustainable floor. IMU integration does not improve UWB ranging accuracy but eliminates position lag between sweeps and provides orientation at sensor rate.
+
+\end{document}

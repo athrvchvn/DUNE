@@ -1,0 +1,44 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: pip
+
+      - run: pip install ruff pyflakes
+
+      # Deliberately permissive (config in python/pyproject.toml): this is here to
+      # catch mistakes, not to enforce taste on a codebase that predates it. A CI
+      # that is red for style is a CI people stop reading.
+      - name: ruff
+        run: ruff check python/
+
+      - name: Everything compiles
+        run: python -m compileall -q python examples
+
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Relative links in the docs resolve
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            grep -oE '\]\([^)#][^)]*\)' "$f" | sed -E 's/^\]\(//; s/\)$//' | while read -r link; do
+              case "$link" in http*|mailto:*) continue ;; esac
+              target="$(dirname "$f")/${link%%#*}"
+              [ -e "$target" ] || { echo "::error file=$f::broken link: $link"; exit 1; }
+            done || fail=1
+          done < <(find . -name '*.md' -not -path './.git/*')
+          exit $fail

@@ -18,7 +18,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from rover.pad import (DEADZONE, PAD_OMEGA_MAX, PAD_V_MAX,  # noqa: E402
+from rover.pad import (DEADZONE, PAD_V_MAX,  # noqa: E402
                        PadMapping, PadThread, _deadzone, _ramp)
 
 

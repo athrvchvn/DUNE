@@ -53,7 +53,7 @@ static const uint8_t N_ANCHORS  = sizeof(ANCHORS) / sizeof(ANCHORS[0]);
 #if defined(UWB_HOSTLINK_UDP)
 static const char*   WIFI_SSID = "your-ssid";
 static const char*   WIFI_PASS = "your-pass";
-static IPAddress     HOST_IP(192, 168, 1, 100);   // the MATLAB PC's IP
+static IPAddress     HOST_IP(255, 255, 255, 255); // broadcast; or the host PC's IP
 static const uint16_t HOST_PORT = 5005;
 #endif
 

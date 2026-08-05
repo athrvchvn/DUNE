@@ -2,7 +2,7 @@ function uwb3vision()
 %UWB3VISION Put the DUNE UWB overhead-camera toolchain first on the path.
 %
 %   Guarantees d:\UWB_3\matlab\vision wins over any duplicate copies of the
-%   shared function names (e.g. D:\UWB_modules_new\matlab\vision) regardless
+%   shared function names (e.g. another checkouts matlab/vision) regardless
 %   of the current folder, and prints the active camera calibration so you
 %   can see at a glance what the tools will use. Called automatically by
 %   startup.m; safe to re-run at any time (e.g. after you cd elsewhere).
