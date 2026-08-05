@@ -109,7 +109,7 @@ flowchart TD
 ## Quickstart
 
 ```bash
-git clone https://github.com/AdershM-2/DUNE
+git clone https://github.com/athrvchvn/DUNE
 cd DUNE
 pip install -e "python/[all]"
 

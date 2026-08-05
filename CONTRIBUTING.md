@@ -24,7 +24,7 @@ or not — is a genuine contribution.
 ## Development setup
 
 ```bash
-git clone https://github.com/AdershM-2/DUNE
+git clone https://github.com/athrvchvn/DUNE
 cd DUNE
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e "python/[all]"

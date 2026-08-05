@@ -66,7 +66,7 @@ dev = [
 all = ["dune-uwb[mhe,reports,dev]"]
 
 [project.urls]
-Repository = "https://github.com/AdershM-2/DUNE"
+Repository = "https://github.com/athrvchvn/DUNE"
 
 [tool.setuptools]
 packages = ["dune", "host", "reports", "rover", "tools"]

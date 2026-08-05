@@ -15,7 +15,7 @@ authors:
     given-names: Ashish
     affiliation: "Department of Mechanical Engineering, Indian Institute of Technology Kanpur"
     email: adutta@iitk.ac.in
-repository-code: "https://github.com/AdershM-2/DUNE"
+repository-code: "https://github.com/athrvchvn/DUNE"
 license: MIT
 version: 1.0.0
 # TODO before release: enable the Zenodo GitHub integration, push the v1.0.0 tag, then

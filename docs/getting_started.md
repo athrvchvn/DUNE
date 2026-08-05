@@ -25,7 +25,7 @@ and two tags. Full bill of materials in [hardware.md](hardware.md).
 Host software:
 
 ```bash
-git clone https://github.com/AdershM-2/DUNE
+git clone https://github.com/athrvchvn/DUNE
 cd DUNE
 pip install -e "python/[all]"
 ```
