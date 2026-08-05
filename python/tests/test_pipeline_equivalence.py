@@ -1,6 +1,6 @@
 """`SweepPipeline` against MATLAB's own recorded output.
 
-Every session in `matlab/logs/` exists twice: a raw serial/UDP tee of the wire
+Every session in `logs/` exists twice: a raw serial/UDP tee of the wire
 lines, and the JSONL that MATLAB's `live_tag.m` wrote while consuming them. That
 pairing lets the Python port be driven with the same input and scored against
 the same output, with no MATLAB needed at test time.
@@ -49,8 +49,8 @@ from rtls.range_correction import RangeCorrection            # noqa: E402
 from rtls.session_log import read_session_log                # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
-LOGS = REPO / 'matlab' / 'logs'
-CONFIG = REPO / 'matlab' / 'config'
+LOGS = REPO / 'logs'
+CONFIG = REPO / 'config'
 
 # The geometry these sessions were recorded against. Established empirically:
 # it reproduces the logged x,y to log resolution, where every other committed

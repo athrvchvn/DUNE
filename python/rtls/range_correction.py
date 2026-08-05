@@ -30,6 +30,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
+from .paths import config
+
 import numpy as np
 
 SCHEMA = "dune_range_correction_v1"
@@ -52,7 +54,7 @@ class RangeCorrection:
         can invoke this unconditionally (matching the MATLAB ``[]`` contract).
         """
         if path is None:
-            path = Path(__file__).resolve().parents[2] / "matlab" / "config" / "range_correction.json"
+            path = config("range_correction.json")
         path = Path(path)
         if not path.exists():
             return None

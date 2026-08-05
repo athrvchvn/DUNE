@@ -1,6 +1,6 @@
 """Anchor self-survey reconstruction, against MATLAB's committed output.
 
-`matlab/results/survey_runs/` holds captures **and** the `anchors_*.json` that
+`data/survey/` holds captures **and** the `anchors_*.json` that
 `build_survey_anchors.m` produced from them — a self-contained oracle needing no
 MATLAB at test time.
 
@@ -32,8 +32,8 @@ from rtls.survey import (align_to, apply_delays, build_survey_anchors,  # noqa: 
                          fit_anchor_delays, mds_2d, read_survey)
 
 REPO = Path(__file__).resolve().parents[2]
-SURVEY_DIR = REPO / 'matlab' / 'results' / 'survey_runs'
-CONFIG = REPO / 'matlab' / 'config'
+SURVEY_DIR = REPO / 'data' / 'survey'
+CONFIG = REPO / 'config'
 
 pytestmark = pytest.mark.skipif(not SURVEY_DIR.is_dir(),
                                 reason="no survey_runs/ in this checkout")
@@ -206,11 +206,11 @@ def test_per_anchor_delay_fit_recovers_injected_biases():
 
 # ── tag bias ──────────────────────────────────────────────────────────────────
 
-STATIC_CAPTURE = REPO / 'matlab' / 'results' / 'static_capture.txt'
-TAG_BIAS_MAT = REPO / 'matlab' / 'results' / 'tag_bias_fit.mat'
+STATIC_CAPTURE = REPO / 'data' / 'static_campaign' / 'static_capture.txt'
+TAG_BIAS_MAT = REPO / 'data' / 'static_campaign' / 'tag_bias_fit.mat'
 # The geometry anchor_bias.json was fitted against — it names the layout in its
 # own `note` field ("rect 6.3x3.0, A5 top edge at x=3.3").
-ANCHORS_RECT = REPO / 'matlab' / 'config' / 'anchors_rect6p3x3p0_2026-07-01.json'
+ANCHORS_RECT = REPO / 'config' / 'anchors_rect6p3x3p0_2026-07-01.json'
 
 
 @pytest.mark.skipif(not (STATIC_CAPTURE.exists() and TAG_BIAS_MAT.exists()

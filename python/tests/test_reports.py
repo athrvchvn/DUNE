@@ -24,10 +24,10 @@ from host.paths import PathNotAllowed, list_files, resolve_under_repo  # noqa: E
 from reports.rover import fit_rigid_2d                        # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
-RAW_CAPTURE = (REPO / 'matlab' / 'results' / 'static_accuracy_20260720_195637'
+RAW_CAPTURE = (REPO / 'data' / 'static_campaign'
                / 'serial_raw.log')
-ANCHORS_5 = REPO / 'matlab' / 'config' / 'anchors_kinect_clicked_20260724.json'
-ROVER_RUNS = sorted((REPO / 'matlab' / 'results' / 'rover_runs').glob('*.mat'))
+ANCHORS_5 = REPO / 'config' / 'anchors_kinect_clicked_20260724.json'
+ROVER_RUNS = sorted((REPO / 'data' / 'rover_runs').glob('*.mat'))
 
 h5py = pytest.importorskip('h5py', reason="h5py needed for MATLAB v7.3 .mat")
 
@@ -42,13 +42,13 @@ def test_paths_outside_the_repo_are_rejected():
 
 
 def test_relative_paths_resolve_against_the_repo_root():
-    p = resolve_under_repo('matlab/config/anchors.json')
+    p = resolve_under_repo('config/anchors.json')
     assert p.is_absolute() and p.name == 'anchors.json'
 
 
 def test_dot_dot_inside_the_repo_is_allowed():
     """Containment is checked after resolution, not by filtering strings."""
-    assert resolve_under_repo('python/../matlab/config/anchors.json').exists()
+    assert resolve_under_repo('python/../config/anchors.json').exists()
 
 
 def test_file_listing_offers_only_known_kinds():
@@ -268,7 +268,7 @@ def test_a_mismatched_anchor_geometry_is_flagged(tmp_path):
 def test_a_non_rover_mat_is_rejected_with_a_clear_message(tmp_path):
     from reports.rover import rover_report
 
-    other = REPO / 'matlab' / 'results' / 'static_accuracy_20260720_195637' / 'bakeoff.mat'
+    other = REPO / 'data' / 'static_campaign' / 'bakeoff.mat'
     if not other.exists():
         pytest.skip("no non-rover .mat to test with")
     with pytest.raises(Exception) as e:

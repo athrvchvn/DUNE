@@ -5,7 +5,7 @@ function report = calibrate_delays(port, opts)
 %
 %   Prerequisites (in this order):
 %     1. Tag parked with line of sight to all anchors, and NOT moved since
-%        clickTagTruth wrote matlab/config/tag_truth.json (Kinect truth).
+%        clickTagTruth wrote config/tag_truth.json (Kinect truth).
 %     2. All anchors powered. live_tag closed (frees the COM port).
 %
 %   What it does, per anchor:
@@ -19,7 +19,7 @@ function report = calibrate_delays(port, opts)
 %     raw ranges are measured for opts.measureS seconds BEFORE and AFTER;
 %     the report prints per-anchor range error vs truth and the 2D position
 %     error of a plain solve on the median ranges, and everything is saved
-%     to matlab/config/delay_calibration.json (provenance for the paper).
+%     to config/delay_calibration.json (provenance for the paper).
 %
 %   NOTE tag 240 is the REFERENCE: its own delay error is absorbed into the
 %   anchor values (pair ranging can't separate them). Tag 241 is aligned to

@@ -3,7 +3,7 @@ Cross-language equivalence: the Python solve path vs DUNE's MATLAB pipeline.
 
 This is the strongest check available that the Python rebuild is a faithful port
 of ``matlab/+dune``. It does not need MATLAB installed: DUNE's recorded hardware
-sessions in ``matlab/logs/`` contain, per sweep, both the raw wire line
+sessions in ``logs/`` contain, per sweep, both the raw wire line
 (``serial_raw_*.log``) and what its MATLAB pipeline computed from that line
 (``rtls_log_*.jsonl`` -- corrected ranges, NLOS gap and weight, used-anchor set,
 solved x/y). Reproducing those numbers here pins both implementations together.
@@ -47,8 +47,8 @@ from rtls.range_correction import RangeCorrection      # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, '..', '..'))
-LOGS = os.path.join(REPO, 'matlab', 'logs')
-CONFIG = os.path.join(REPO, 'matlab', 'config')
+LOGS = os.path.join(REPO, 'logs')
+CONFIG = os.path.join(REPO, 'config')
 
 # The constellation these sessions were recorded against.
 ANCHORS_JSON = os.path.join(CONFIG, 'anchors_kinect_clicked_20260724.json')

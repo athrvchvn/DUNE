@@ -78,7 +78,7 @@ def test_a_captured_run_can_be_scored_by_the_report(tmp_path):
     # The SAME geometry the synthetic ranges are generated from. Passing None
     # here silently falls back to anchors.json — a different, 4-anchor layout —
     # and the baseline check then measures the mismatch instead of the capture.
-    anchors_path = (Path(__file__).resolve().parents[2] / 'matlab' / 'config'
+    anchors_path = (Path(__file__).resolve().parents[2] / 'config'
                     / 'anchors_kinect_clicked_20260724.json')
     cfg = AnchorConfig.from_json(str(anchors_path))
     A = cfg.coords
@@ -259,7 +259,7 @@ def _app(tmp_path):
     app.set_config_msg(lambda: {'type': 'config'})
     app.register_handlers(rapi.HANDLERS)
     app.state.anchors = AnchorConfig.from_json(str(
-        Path(__file__).resolve().parents[2] / 'matlab' / 'config'
+        Path(__file__).resolve().parents[2] / 'config'
         / 'anchors_kinect_clicked_20260724.json'))
     return app, rapi
 

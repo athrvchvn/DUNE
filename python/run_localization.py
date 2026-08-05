@@ -44,8 +44,9 @@ from rtls.range_correction import RangeCorrection
 from rtls.rigid_body     import RigidBodyTracker
 from host.pipeline       import PipelineConfig, SweepPipeline
 from host.tag_fix        import tag_fix_message
-from multipoint_survey import solve_anchor_positions, write_anchors_json, update_anchor_json, SURVEY_GRID
-from calibration_manager import CalibrationManager
+from tools.multipoint_survey import (solve_anchor_positions, write_anchors_json,
+                                     update_anchor_json, SURVEY_GRID)
+from tools.calibration_manager import CalibrationManager
 from vision.vision_config import VisionConfig
 from vision.backproject import pixel_to_world, mirror_correct
 from vision.kinect_capture import KinectCapture
@@ -76,7 +77,7 @@ except ImportError:
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
 SCRIPT_DIR = Path(__file__).resolve().parent
-CONFIG_DIR = SCRIPT_DIR.parent / 'matlab' / 'config'
+from rtls.paths import CONFIG_DIR
 LOG_DIR    = SCRIPT_DIR / 'logs'
 LOG_DIR.mkdir(exist_ok=True)
 
@@ -1413,7 +1414,7 @@ async def main(args):
         # Server is listening now (serve() has already bound by the time
         # `async with` enters the block) — safe to open the browser here
         # rather than racing it against server startup.
-        gui_path = SCRIPT_DIR / 'gui.html'
+        gui_path = SCRIPT_DIR / 'gui' / 'gui.html'
         if not args.no_browser:
             print(f"[GUI]  Opening {gui_path}")
             webbrowser.open(gui_path.as_uri())

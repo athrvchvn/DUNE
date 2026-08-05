@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-GUI = Path(__file__).resolve().parents[1] / 'gui.html'
+GUI = Path(__file__).resolve().parents[1] / 'gui' / 'gui.html'
 QJS = shutil.which('qjs') or shutil.which('node')
 
 pytestmark = pytest.mark.skipif(

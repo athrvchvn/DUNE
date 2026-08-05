@@ -40,7 +40,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rtls import FrameParser
 

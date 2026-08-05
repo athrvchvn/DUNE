@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 run_survey.py — Anchor self-survey: collect pairwise ranges, run classical
-                MDS, and write matlab/config/anchors.json.
+                MDS, and write config/anchors.json.
 
 Python equivalent of matlab/runSurvey.m.
 
@@ -13,7 +13,7 @@ Steps:
     1. Flash all anchors with Anchor.ino and the tag with Tag.ino.
     2. Connect the tag via USB serial.
     3. Run this script — it sends "SURVEY\\n" and waits for results.
-    4. anchors.json is written automatically to matlab/config/anchors.json.
+    4. anchors.json is written automatically to config/anchors.json.
     5. Run run_localization.py to start localization with the new anchor map.
 
 Wire protocol from tag:
@@ -44,7 +44,9 @@ except ImportError:
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-CONFIG_DIR = SCRIPT_DIR.parent / 'matlab' / 'config'
+# Running as a script from anywhere: make `python/` importable.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from rtls.paths import CONFIG_DIR
 
 
 # ── MDS ──────────────────────────────────────────────────────────────────────

@@ -15,28 +15,39 @@ from __future__ import annotations
 
 from pathlib import Path
 
-REPO_ROOT   = Path(__file__).resolve().parents[2]
-PYTHON_DIR  = REPO_ROOT / 'python'
-MATLAB_DIR  = REPO_ROOT / 'matlab'
-CONFIG_DIR  = MATLAB_DIR / 'config'
-RESULTS_DIR = MATLAB_DIR / 'results'
+# Locations come from the library (rtls.paths); this module adds only policy.
+from rtls.paths import (  # noqa: E402,F401
+    CONFIG_DIR, DATA_DIR, LOGS_DIR, MATLAB_DIR, PYTHON_DIR, REPO_ROOT,
+    RESULTS_DIR,
+)
 
 # Browsable collections, keyed by the `kind` a `path` argument declares. Order
 # matters: the first existing directory is the default the picker opens on.
+#
+# `logs/` is the current location; `matlab/logs` and `python/logs` are where
+# sessions recorded before the layout was unified still sit, and are kept so an
+# existing working copy does not lose sight of its own history.
 BROWSABLE: dict[str, tuple[tuple[Path, str], ...]] = {
-    'logs':       ((MATLAB_DIR / 'logs', '*.jsonl'),
+    'logs':       ((LOGS_DIR, '*.jsonl'),
+                   (LOGS_DIR, '*.ndjson'),
+                   (LOGS_DIR, 'serial_raw_*.log'),
+                   (LOGS_DIR, 'udp_raw_*.log'),
+                   (MATLAB_DIR / 'logs', '*.jsonl'),
                    (MATLAB_DIR / 'logs', 'serial_raw_*.log'),
                    (MATLAB_DIR / 'logs', 'udp_raw_*.log'),
                    (PYTHON_DIR / 'logs', '*.jsonl'),
                    (PYTHON_DIR / 'logs', '*.ndjson')),
-    'rover_runs': ((RESULTS_DIR / 'rover_runs', '*.mat'),),
+    'rover_runs': ((RESULTS_DIR / 'rover_runs', '*.mat'),
+                   (DATA_DIR / 'rover_runs', '*.mat')),
     'results':    ((RESULTS_DIR, '*/report.txt'),),
     'config':     ((CONFIG_DIR, 'anchors*.json'),),
     'captures':   ((RESULTS_DIR, 'static_capture.txt'),
                    (RESULTS_DIR, '*/serial_raw.log'),
-                   (MATLAB_DIR / 'logs', 'serial_raw_*.log'),
-                   (MATLAB_DIR / 'logs', 'udp_raw_*.log')),
-    'survey':     ((RESULTS_DIR / 'survey_runs', 'survey_*.txt'),),
+                   (DATA_DIR / 'static_campaign', '*.txt'),
+                   (LOGS_DIR, 'serial_raw_*.log'),
+                   (LOGS_DIR, 'udp_raw_*.log')),
+    'survey':     ((RESULTS_DIR / 'survey_runs', 'survey_*.txt'),
+                   (DATA_DIR / 'survey', 'survey_*.txt')),
 }
 
 

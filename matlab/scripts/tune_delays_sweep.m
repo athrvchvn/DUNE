@@ -15,7 +15,7 @@ function report = tune_delays_sweep(port, opts)
 %
 %   Prereqs: tag parked EXACTLY where clickTagTruth clicked it, all anchors
 %   on, live_tag closed. Current per-anchor ticks are read from
-%   matlab/config/delay_calibration.json (written by calibrate_delays) or
+%   config/delay_calibration.json (written by calibrate_delays) or
 %   passed via opts.ticks0.
 
 arguments

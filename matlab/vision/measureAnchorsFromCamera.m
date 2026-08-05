@@ -6,7 +6,7 @@ function W = measureAnchorsFromCamera(nAnchors)
 %   (z ~ 0.22 m) — a raw floor-plane map would sit a few % too far from nadir
 %   (parallax), up to ~10 cm at the edges. The de-parallaxed points are the true
 %   (x,y). The world frame is then defined (anchor 1 = origin, +X toward anchor
-%   2, the rest on +Y) and written to matlab/config/anchors.json.
+%   2, the rest on +Y) and written to config/anchors.json.
 %
 %   Prints the baseline (a1-a2) and main diagonal (a1-a3) so you can cross-check
 %   the CAMERA's metric against a tape (independent sanity check).

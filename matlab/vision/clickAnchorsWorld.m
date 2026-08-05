@@ -14,14 +14,14 @@ function A = clickAnchorsWorld(anchorZ, opts)
     %
     % After the clicks it prints the positions and the pairwise distance
     % table (spot-check against a tape measure if unsure), waits for ENTER,
-    % then writes matlab/config/anchors.json with a timestamped backup of the
+    % then writes config/anchors.json with a timestamped backup of the
     % previous file.
     %
     % Inputs:
     %   anchorZ - anchor antenna height above the floor (m), default 0.24
     %   opts    - optional struct fields:
     %       .anchorIds  which ids to click, in order (default [1 2 3 4 5])
-    %       .outFile    default matlab/config/anchors.json
+    %       .outFile    default config/anchors.json
     %       .snapshot   HxWx3 image to use instead of a live Kinect grab
     %                   (already in the pipeline's fliplr'd convention)
     %       .dryRun     print everything, write nothing (default false)

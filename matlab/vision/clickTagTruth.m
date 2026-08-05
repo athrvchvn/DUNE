@@ -5,7 +5,7 @@ function truth = clickTagTruth(tagZ, opts)
     % registerWorldFrame first) to turn two clicks on a fresh Kinect snapshot
     % into world positions of the UWB tag antennas, computes the true range
     % from each tag to every anchor in anchors.json, and writes
-    % matlab/config/tag_truth.json for the Python side:
+    % config/tag_truth.json for the Python side:
     %
     %   python tag_selfcalib.py auto --tag-id 240
     %

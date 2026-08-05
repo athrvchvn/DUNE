@@ -14,6 +14,7 @@ than in a habit.
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -65,6 +66,57 @@ def test_no_unused_imports_in_the_port():
         if 'noqa' not in src:
             unexplained.append(line)
     assert not unexplained, "unused imports:\n  " + "\n  ".join(unexplained)
+
+
+def _is_ours(top: str) -> bool:
+    """Does `top` name a module that ships in this repository?
+
+    Searched over the whole of `python/`, not just its top level: the point of
+    the check is to catch an import left pointing at a module's *old* location
+    after it moved into a subpackage, which is precisely the case a top-level
+    lookup misses.
+    """
+    if any(p.name == top and (p / '__init__.py').exists()
+           for p in PY.rglob(top) if p.is_dir()):
+        return True
+    return any(p.parent.name != '__pycache__' for p in PY.rglob(f'{top}.py'))
+
+
+def test_the_entry_points_still_start():
+    """Nothing else imports `run_localization.py` or the operator tools.
+
+    The whole suite passed with `run_localization.py` unable to import at all,
+    because a module nobody imports is a module nobody type-checks. The live
+    host is the one program every user runs first, so its import graph is
+    exactly what must not be allowed to rot silently.
+
+    `--help` is used rather than an import because these are scripts: argparse
+    runs, the module body executes top to bottom, and nothing binds a socket.
+    """
+    scripts = [PY / 'run_localization.py', *sorted((PY / 'tools').glob('*.py'))]
+    broken = []
+    for s in scripts:
+        if s.name == '__init__.py':
+            continue
+        proc = subprocess.run([sys.executable, str(s), '--help'],
+                              capture_output=True, text=True,
+                              cwd=PY.parent, timeout=120)
+        if proc.returncode == 0 or 'usage:' in proc.stdout:
+            continue
+
+        # A missing *third-party* package is the reader's environment and not
+        # this tree's problem. A missing module that is sitting right there in
+        # python/ is a stale import — the bug this test exists for. Deciding by
+        # looking on disk keeps the test honest when modules move again.
+        missing = re.findall(r"No module named '([\w.]+)'", proc.stderr)
+        ours = [m for m in missing if _is_ours(m.split('.')[0])]
+        if ours:
+            broken.append(f"{s.name}: stale import of {', '.join(ours)}")
+        elif not missing:
+            broken.append(f"{s.name}: exit {proc.returncode}: "
+                          f"{proc.stderr.strip()[-200:]}")
+
+    assert not broken, "entry points that will not start:\n  " + "\n  ".join(broken)
 
 
 def test_every_registered_job_body_has_resolvable_globals():

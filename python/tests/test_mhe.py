@@ -46,8 +46,8 @@ from rtls.raw_log import read_raw_tee                # noqa: E402
 from rtls.solve_sweep import solve_sweep             # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
-LOGS = REPO / 'matlab' / 'logs'
-CONFIG = REPO / 'matlab' / 'config'
+LOGS = REPO / 'logs'
+CONFIG = REPO / 'config'
 ANCHORS = CONFIG / 'anchors_kinect_clicked_20260724.json'
 
 SQUARE = np.array([[0.0, 0.0, 0.0], [6.0, 0.0, 0.0],

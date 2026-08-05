@@ -25,6 +25,7 @@ from typing import Callable, Optional
 import numpy as np
 
 from rtls.anchor_config import AnchorConfig
+from rtls.paths import config
 from rtls.frame_parser import FrameParser
 from rtls.metrics import prctile
 from rtls.raw_log import is_raw_tee, read_raw_tee
@@ -286,4 +287,4 @@ def _plot_tag(rep: ReportWriter, cfg: AnchorConfig, tag_id: int, T: dict) -> Non
 
 
 def _default_anchors() -> Path:
-    return (Path(__file__).resolve().parents[2] / 'matlab' / 'config' / 'anchors.json')
+    return config('anchors.json')

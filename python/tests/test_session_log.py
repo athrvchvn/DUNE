@@ -3,7 +3,7 @@
 The reader has to survive two dialects — MATLAB's `dune.sweepRecord` output and
 Python's `SessionRecorder`, which interleaves every broadcast family — so the
 useful test is not a handcrafted fixture but the 69 real logs sitting in
-`matlab/logs/` and `python/logs/`. A parser that only works on invented input
+`logs/`. A parser that only works on invented input
 is how the `anchor_diag`-as-dict bug survived the first time.
 """
 
@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from rtls.session_log import (discover_anchor_ids, read_session_log)  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
-MATLAB_LOGS = sorted((REPO / 'matlab' / 'logs').glob('*.jsonl'))
+MATLAB_LOGS = sorted((REPO / 'logs').glob('*.jsonl'))
 PYTHON_LOGS = sorted((REPO / 'python' / 'logs').glob('*.jsonl'))
 
 
@@ -108,7 +108,7 @@ def test_dual_tag_logs_split_cleanly_by_tag(tmp_path):
 
 # ── Against the real corpus ───────────────────────────────────────────────────
 
-@pytest.mark.skipif(not MATLAB_LOGS, reason="no matlab/logs/*.jsonl in this checkout")
+@pytest.mark.skipif(not MATLAB_LOGS, reason="no logs/*.jsonl in this checkout")
 def test_reads_every_matlab_log_without_error():
     """69 real logs, three writers, several dual-tag. None may raise."""
     total_sweeps = n_nonempty = n_ranged = 0
@@ -125,7 +125,7 @@ def test_reads_every_matlab_log_without_error():
     assert n_ranged >= 40, f"only {n_ranged} logs carry ranges"
 
 
-@pytest.mark.skipif(not MATLAB_LOGS, reason="no matlab/logs/*.jsonl in this checkout")
+@pytest.mark.skipif(not MATLAB_LOGS, reason="no logs/*.jsonl in this checkout")
 def test_position_only_rover_logs_are_read_as_such():
     """`live_rover.m` writes a third schema: solved poses, no ranges, no t_ms.
 
@@ -151,7 +151,7 @@ def test_position_only_rover_logs_are_read_as_such():
     assert seen_still, "no rover log recorded `still`"
 
 
-@pytest.mark.skipif(not MATLAB_LOGS, reason="no matlab/logs/*.jsonl in this checkout")
+@pytest.mark.skipif(not MATLAB_LOGS, reason="no logs/*.jsonl in this checkout")
 def test_the_ekf_output_oracle_for_phase_2_is_present():
     """Phase 2 pins `ex/ey` against MATLAB. Check that data actually exists.
 
@@ -179,7 +179,7 @@ def test_reads_python_era_logs():
         read_session_log(p)                          # must not raise
 
 
-@pytest.mark.skipif(not MATLAB_LOGS, reason="no matlab/logs/*.jsonl in this checkout")
+@pytest.mark.skipif(not MATLAB_LOGS, reason="no logs/*.jsonl in this checkout")
 def test_explicit_anchor_ids_fix_the_column_order():
     """Callers comparing against MATLAB need its 1:5 column order on demand."""
     p = next(q for q in MATLAB_LOGS if len(read_session_log(q)))
@@ -234,7 +234,7 @@ def test_a_jsonl_is_not_mistaken_for_a_raw_tee(tmp_path):
 def test_the_committed_udp_tees_are_readable():
     """The regression this guards: these all read as empty before the fix."""
     from rtls.raw_log import read_raw_tee
-    udp = sorted((REPO / 'matlab' / 'logs').glob('udp_raw_*.log'))
+    udp = sorted((REPO / 'logs').glob('udp_raw_*.log'))
     if not udp:
         pytest.skip("no udp_raw logs committed")
     total = sum(len(read_raw_tee(p)) for p in udp)

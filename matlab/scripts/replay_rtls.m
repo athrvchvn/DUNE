@@ -12,7 +12,7 @@ function out = replay_rtls(logFile, opts)
 %   Old logs were recorded in the rect 6.3x3.0 layout: pass
 %   anchors="matlab\config\anchors_rect6p3x3p0_2026-07-01.json" for those.
 %
-%   opts.anchors  anchors.json path ("" = current matlab/config/anchors.json)
+%   opts.anchors  anchors.json path ("" = current config/anchors.json)
 %   opts.bias     ALSO subtract host-side anchor_bias.json (default false)
 %   opts.tagZ     tag antenna height (m, default 0.22)
 %   opts.saveDir  output dir ("" = matlab\results\replay_<session>)

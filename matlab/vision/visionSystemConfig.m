@@ -12,7 +12,7 @@ function config = visionSystemConfig()
     %     intrinsics = config.camera.intrinsics;
     %
     %   Coordinate frames:
-    %     World  = UWB anchor frame (matlab/config/anchors.json): origin at
+    %     World  = UWB anchor frame (config/anchors.json): origin at
     %              anchor 1, +X toward anchor 2, Z up. Established by
     %              registerWorldFrame(); until then a plumb-camera (nadir)
     %              fallback is used with origin on the floor below the camera.
@@ -126,7 +126,7 @@ function config = visionSystemConfig()
     config.apriltag.base.lever_uwb_0xF0 = [-0.255, -0.007, 0.028];
     config.apriltag.base.lever_uwb_0xF1 = [ 0.225, -0.027, 0.028];
 
-    %% Testbed (UWB anchor frame; matches matlab/config/anchors.json)
+    %% Testbed (UWB anchor frame; matches config/anchors.json)
     config.workspace = struct();
     config.workspace.xRange = [-0.5, 6.8];   % m (anchors span 0..6.3)
     config.workspace.yRange = [-0.5, 3.6];   % m (anchors span 0..3.1)

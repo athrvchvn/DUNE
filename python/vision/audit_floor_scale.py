@@ -27,6 +27,7 @@ import cv2
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from rtls.paths import CONFIG_DIR
 from vision.vision_config import VisionConfig, DEFAULT_CONFIG_PATH
 from vision.kinect_capture import KinectCapture
 from vision.backproject import mirror_correct, pixel_to_world
@@ -37,7 +38,7 @@ CENTRE_PX = 350.0
 MID_PX    = 650.0
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-REG_PATH  = REPO_ROOT / 'matlab' / 'config' / 'kinect_world_registration.json'
+REG_PATH  = CONFIG_DIR / 'kinect_world_registration.json'
 
 
 def zone_of(u: float, v: float, cx: float, cy: float) -> str:

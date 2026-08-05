@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from .multilaterate import multilaterate
+from .paths import config
 from .nlos import gap_weights
 
 
@@ -162,7 +163,7 @@ def load_anchor_bias(path=None) -> dict:
     from pathlib import Path
 
     if path is None:
-        path = Path(__file__).resolve().parents[2] / 'matlab' / 'config' / 'anchor_bias.json'
+        path = config('anchor_bias.json')
     path = Path(path)
     if not path.exists():
         return {}

@@ -32,7 +32,9 @@ with warnings.catch_warnings():
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-CONFIG_DIR = SCRIPT_DIR.parent / 'matlab' / 'config'
+# Running as a script from anywhere: make `python/` importable.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from rtls.paths import CONFIG_DIR
 
 # 3×3 calibration grid for 4×4 m workspace (anchors at corners ±2 m)
 SURVEY_GRID = [

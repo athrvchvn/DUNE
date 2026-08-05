@@ -26,6 +26,7 @@ from typing import Callable, Optional
 import numpy as np
 
 from rtls.anchor_config import AnchorConfig
+from rtls.paths import config
 from rtls.metrics import prctile, trajectory_metrics
 from rtls.solve_sweep import solve_sweep
 
@@ -458,4 +459,4 @@ def _plot(rep: ReportWriter, cfg: AnchorConfig, per_tag: dict,
 
 
 def _default_anchors() -> Path:
-    return Path(__file__).resolve().parents[2] / 'matlab' / 'config' / 'anchors.json'
+    return config('anchors.json')
