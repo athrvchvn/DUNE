@@ -1,6 +1,6 @@
 function out = mhe_replay(src, opts)
 %MHE_REPLAY Offline A/B of the Moving Horizon Estimator vs the EKF (step 7 exp).
-%   out = mhe_replay("D:\...\serial_raw.log")
+%   out = mhe_replay(fullfile(dune.logsDir(), "serial_raw_....log"))
 %   out = mhe_replay(src, spotsJson="...\spots.json")   % + static wander/RMSE
 %
 %   Runs the identical solveSweep chain, then feeds each sweep to BOTH

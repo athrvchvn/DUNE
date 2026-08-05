@@ -32,8 +32,9 @@ classdef TagUdp < handle
     %
     %   NOTE (Windows): the first bind prompts Windows Defender Firewall to allow
     %   inbound UDP for MATLAB — allow it, or the broadcast never arrives. If UDP
-    %   is blocked on the AP (iitk drops client-to-client/broadcast), no socket
-    %   option helps; use a phone hotspot / dedicated AP. Verify with udp_probe.
+    %   is blocked at the access point -- many managed/campus networks drop
+    %   client-to-client and broadcast traffic -- no socket option helps; use a
+    %   phone hotspot or a dedicated AP. Verify with udp_probe.
 
     properties
         port = 4100

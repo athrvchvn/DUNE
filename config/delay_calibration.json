@@ -4,7 +4,7 @@
   "method": "HWCALIB on-device binary search vs Kinect click-truth",
   "reference_tag": 240,
   "reference_tag_delay_ticks": 16360,
-  "truth_file": "D:\\UWB_3\\matlab\\config\\tag_truth.json",
+  "truth_file": "config/tag_truth.json",
   "truth_tag_xy": [
     0.66,
     0.504

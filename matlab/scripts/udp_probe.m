@@ -6,9 +6,10 @@ function udp_probe(seconds, port)
 %
 %   Binds a datagram socket and prints every RTLS line that arrives, then a
 %   per-tag summary (packets, rate, anchors, IMU?). This is the gate for the
-%   whole dual-tag pipeline: if nothing arrives here, the AP is dropping the
-%   broadcast (iitk historically blocks client-to-client) — switch to a phone
-%   hotspot / dedicated AP before wiring live_dual_tag.
+%   whole dual-tag pipeline: if nothing arrives here, the access point is
+%   dropping the broadcast — managed and campus networks commonly block
+%   client-to-client traffic — so switch to a phone hotspot or a dedicated AP
+%   before going further.
 %
 %   Uses java.net.DatagramSocket (no Instrument Control Toolbox needed).
 %

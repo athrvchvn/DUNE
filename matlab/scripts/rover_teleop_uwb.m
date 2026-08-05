@@ -1,7 +1,7 @@
 % rover_teleop_uwb.m
 % PS4-teleoperated rover run with SIMULTANEOUS UWB capture (DUNE step 7.4/7.5).
 %
-% PORTED from D:\MMS_Codebase\matlab\slip_analysis\
+% PORTED from the MMS codebase (slip_analysis) - external, see MMS_ROOT below
 %              test_random_excitation_slip_measurement.m
 % The MMS codebase is used READ-ONLY (addpath only). Nothing there is modified;
 % every change for DUNE lives in THIS file.
@@ -36,8 +36,13 @@ clear; close all; clc;
 %% CONFIGURATION
 %% ========================================
 
-% --- MMS codebase (READ-ONLY dependency: HardwareManipulatorControl etc.) ---
-MMS_ROOT = 'D:\MMS_Codebase\matlab';
+% --- MMS codebase (READ-ONLY external dependency: HardwareManipulatorControl) ---
+%   NOT part of DUNE and not publicly available. This script drives a specific
+%   rocker-bogie rover through that stack; everything else in DUNE works without
+%   it. Set this to your own checkout, or use the Python rover code in
+%   python/rover/ instead. Left empty so the check below fails loudly rather
+%   than silently picking up whatever happens to sit at some other path.
+MMS_ROOT = '';   % <- set me, or see docs/matlab_pipeline.md
 
 % --- Hardware ---
 COM_PORT = 'COM8';   % ← PER MACHINE. Windows 'COM8'; Linux '/dev/ttyUSB0';
@@ -342,7 +347,7 @@ if lower(TRUTH_SOURCE) == "dune" && ~isempty(visionCfg)
 else
     metadata.truth_frame = 'mms_world (legacy nadir)';
 end
-metadata.ported_from = ['D:\MMS_Codebase\matlab\slip_analysis\' ...
+metadata.ported_from = ['MMS_Codebase/matlab/slip_analysis/' ...
                         'test_random_excitation_slip_measurement.m'];
 % DUNE/UWB metadata
 metadata.uwb.enabled = UWB_ENABLE;

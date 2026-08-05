@@ -5,7 +5,7 @@ function config = visionSystemConfig()
     %   what the ground-truth calibration campaign needs (docs/
     %   gt_calibration_campaign.md). Function names intentionally match the
     %   MMS originals so the run-book commands are unchanged — do NOT keep
-    %   D:\MMS_Codebase\matlab\vision* on the MATLAB path at the same time.
+    %   another projects vision* folder on the MATLAB path at the same time.
     %
     %   Usage:
     %     config = visionSystemConfig();

@@ -64,6 +64,15 @@ Rover teleoperation with synchronized capture:
 rover_teleop_uwb                   % set COM_PORT / UWB_TAG_COM for your machine first
 ```
 
+> **`rover_teleop_uwb` has an external dependency DUNE does not ship.** It drives one
+> specific rocker–bogie rover through the "MMS" hardware/kinematics stack, which is not part
+> of this repository and is not publicly available. `MMS_ROOT` is deliberately empty, so the
+> script fails with a clear message rather than half-running.
+>
+> Nothing else in DUNE needs it. For rover control that ships with the project, use
+> `python/rover/` — Ackermann geometry, a fail-closed control loop, and synchronized capture
+> that writes the same `.mat` format.
+
 ## Offline
 
 ```matlab

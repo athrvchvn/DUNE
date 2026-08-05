@@ -3,7 +3,7 @@
   "timestamp": "2026-07-20T19:31:24",
   "method": "sweep-path feedback tuning via SETANTDELAY vs Kinect click-truth",
   "reference_tag": 240,
-  "truth_file": "D:\\UWB_3\\matlab\\config\\tag_truth.json",
+  "truth_file": "config/tag_truth.json",
   "truth_tag_xy": [
     0.1065,
     0.4424

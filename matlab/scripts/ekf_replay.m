@@ -1,7 +1,7 @@
 function out = ekf_replay(src, opts)
 %EKF_REPLAY Run dune.FusionEkf offline over a logged session (step 7.2).
-%   out = ekf_replay("D:\...\serial_raw.log")                 % raw serial tee
-%   out = ekf_replay("D:\...\rtls_log_x.jsonl")               % live session log
+%   out = ekf_replay(fullfile(dune.logsDir(), "serial_raw_....log"))   % raw serial tee
+%   out = ekf_replay(fullfile(dune.logsDir(), "rtls_log_....jsonl"))   % live session log
 %   out = ekf_replay(src, spotsJson="...\spots.json")         % + static eval
 %
 %   Chain per sweep: dune.solveSweep (power-corrected, NLOS-weighted LM fix
