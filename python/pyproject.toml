@@ -6,9 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "dune-uwb"
 version = "1.0.0"
 description = "DUNE — a dual-tag UWB navigation engine for indoor ground robots"
-readme = "../README.md"
+readme = "README.md"
 requires-python = ">=3.9"
-license = { file = "../LICENSE" }
+license = { text = "MIT" }
 authors = [
     { name = "Atharva Chavan" },
     { name = "Adersh M" },
