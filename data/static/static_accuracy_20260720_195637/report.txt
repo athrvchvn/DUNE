@@ -1,0 +1,109 @@
+DUNE step-5 static accuracy — 20260720_195637
+Anchors: D:\UWB_3\matlab\config\anchors.json (clicked_kinect_2026-07-20_z0.24)
+Tag 240, tagZ 0.24 m, 20 s per spot
+
+Spot 1: truth (3.439, 1.349)   sweeps 130 (94% solved)
+  median pos (3.414, 1.283)   offset [-25 -66] mm (|71| mm)
+  2D err: RMSE 79 | median 72 | p95 124 | max 187 mm   scatter std 22 mm
+  per-anchor range err (med, mm): A1 NaN  A2 -40  A3 +59  A4 -40  A5 +26
+
+Spot 2: truth (3.380, -0.150)   sweeps 140 (98% solved)
+  median pos (3.300, -0.076)   offset [-80 +74] mm (|109| mm)
+  2D err: RMSE 152 | median 121 | p95 287 | max 465 mm   scatter std 65 mm
+  per-anchor range err (med, mm): A1 -40  A2 +218  A3 -3  A4 NaN  A5 -147
+
+Spot 3: truth (2.001, -0.641)   sweeps 114 (98% solved)
+  median pos (1.883, -0.656)   offset [-117 -15] mm (|118| mm)
+  2D err: RMSE 131 | median 126 | p95 176 | max 394 mm   scatter std 42 mm
+  per-anchor range err (med, mm): A1 -69  A2 +197  A3 +54  A4 -20  A5 +11
+
+Spot 4: truth (2.069, 0.646)   sweeps 132 (100% solved)
+  median pos (1.964, 0.786)   offset [-105 +140] mm (|175| mm)
+  2D err: RMSE 181 | median 177 | p95 221 | max 264 mm   scatter std 25 mm
+  per-anchor range err (med, mm): A1 -62  A2 +178  A3 -34  A4 -33  A5 -111
+
+Spot 5: truth (2.256, 1.720)   sweeps 138 (97% solved)
+  median pos (2.275, 1.836)   offset [+18 +116] mm (|117| mm)
+  2D err: RMSE 127 | median 120 | p95 193 | max 225 mm   scatter std 30 mm
+  per-anchor range err (med, mm): A1 -206  A2 +120  A3 -14  A4 +22  A5 +54
+
+Spot 6: truth (1.031, 1.876)   sweeps 109 (100% solved)
+  median pos (1.018, 1.871)   offset [-13 -5] mm (|14| mm)
+  2D err: RMSE 74 | median 40 | p95 153 | max 375 mm   scatter std 53 mm
+  per-anchor range err (med, mm): A1 -138  A2 +70  A3 -0  A4 +65  A5 +26
+
+Spot 7: truth (0.911, 0.579)   sweeps 132 (100% solved)
+  median pos (0.861, 0.603)   offset [-50 +23] mm (|55| mm)
+  2D err: RMSE 78 | median 62 | p95 137 | max 241 mm   scatter std 30 mm
+  per-anchor range err (med, mm): A1 -79  A2 +185  A3 -27  A4 +60  A5 +8
+
+Spot 8: truth (1.005, -0.653)   sweeps 119 (99% solved)
+  median pos (0.919, -0.732)   offset [-86 -79] mm (|117| mm)
+  2D err: RMSE 162 | median 126 | p95 328 | max 436 mm   scatter std 77 mm
+  per-anchor range err (med, mm): A1 -69  A2 +193  A3 -141  A4 +88  A5 +1
+
+Spot 9: truth (-0.368, -0.810)   sweeps 143 (98% solved)
+  median pos (-0.481, -0.727)   offset [-113 +83] mm (|140| mm)
+  2D err: RMSE 182 | median 163 | p95 282 | max 335 mm   scatter std 112 mm
+  per-anchor range err (med, mm): A1 -275  A2 +126  A3 -147  A4 +127  A5 -62
+
+Spot 10: truth (0.041, 0.645)   sweeps 95 (100% solved)
+  median pos (0.047, 0.591)   offset [+7 -55] mm (|55| mm)
+  2D err: RMSE 71 | median 62 | p95 121 | max 147 mm   scatter std 26 mm
+  per-anchor range err (med, mm): A1 -16  A2 +102  A3 -40  A4 +151  A5 +46
+
+Spot 11: truth (-0.455, 1.850)   sweeps 131 (100% solved)
+  median pos (-0.345, 1.680)   offset [+110 -171] mm (|203| mm)
+  2D err: RMSE 218 | median 206 | p95 315 | max 447 mm   scatter std 46 mm
+  per-anchor range err (med, mm): A1 -85  A2 +5  A3 -152  A4 +20  A5 +14
+
+Spot 12: truth (-0.693, 0.664)   sweeps 130 (100% solved)
+  median pos (-0.698, 0.630)   offset [-5 -35] mm (|35| mm)
+  2D err: RMSE 74 | median 48 | p95 154 | max 258 mm   scatter std 42 mm
+  per-anchor range err (med, mm): A1 -128  A2 +78  A3 -146  A4 +166  A5 -105
+
+Spot 13: truth (-0.614, -0.831)   sweeps 134 (100% solved)
+  median pos (-0.681, -0.896)   offset [-67 -65] mm (|94| mm)
+  2D err: RMSE 200 | median 107 | p95 401 | max 518 mm   scatter std 110 mm
+  per-anchor range err (med, mm): A1 +80  A2 +180  A3 -287  A4 +134  A5 -119
+
+Spot 14: truth (-1.687, -0.749)   sweeps 142 (100% solved)
+  median pos (-1.544, -0.807)   offset [+143 -58] mm (|155| mm)
+  2D err: RMSE 167 | median 161 | p95 215 | max 287 mm   scatter std 71 mm
+  per-anchor range err (med, mm): A1 +126  A2 -38  A3 NaN  A4 +168  A5 -169
+
+Spot 15: truth (-1.586, 0.708)   sweeps 121 (100% solved)
+  median pos (-1.527, 0.503)   offset [+59 -206] mm (|214| mm)
+  2D err: RMSE 222 | median 214 | p95 290 | max 356 mm   scatter std 27 mm
+  per-anchor range err (med, mm): A1 +35  A2 -41  A3 -18  A4 +245  A5 +135
+
+Spot 16: truth (-1.796, 1.903)   sweeps 126 (89% solved)
+  median pos (-1.735, 1.515)   offset [+61 -389] mm (|393| mm)
+  2D err: RMSE 395 | median 392 | p95 468 | max 487 mm   scatter std 29 mm
+  per-anchor range err (med, mm): A1 -190  A2 NaN  A3 -26  A4 +266  A5 +26
+
+Spot 17: truth (-2.309, 1.203)   sweeps 136 (99% solved)
+  median pos (-2.091, 1.014)   offset [+218 -189] mm (|289| mm)
+  2D err: RMSE 296 | median 291 | p95 362 | max 442 mm   scatter std 29 mm
+  per-anchor range err (med, mm): A1 -176  A2 NaN  A3 -177  A4 +225  A5 -204
+
+Spot 18: truth (-2.373, -0.257)   sweeps 112 (99% solved)
+  median pos (-2.291, -0.279)   offset [+82 -22] mm (|85| mm)
+  2D err: RMSE 99 | median 93 | p95 152 | max 210 mm   scatter std 25 mm
+  per-anchor range err (med, mm): A1 +15  A2 -66  A3 NaN  A4 +53  A5 -147
+
+Spot 19: truth (0.150, 2.029)   sweeps 103 (100% solved)
+  median pos (0.285, 1.682)   offset [+135 -347] mm (|372| mm)
+  2D err: RMSE 368 | median 372 | p95 446 | max 467 mm   scatter std 47 mm
+  per-anchor range err (med, mm): A1 -163  A2 +76  A3 -32  A4 +193  A5 +76
+
+Spot 20: truth (2.729, -1.001)   sweeps 122 (100% solved)
+  median pos (2.495, -0.860)   offset [-235 +141] mm (|273| mm)
+  2D err: RMSE 279 | median 276 | p95 341 | max 396 mm   scatter std 27 mm
+  per-anchor range err (med, mm): A1 -282  A2 +189  A3 -79  A4 NaN  A5 -308
+
+================ OVERALL (20 spots, 2471 sweeps) ================
+2D error: RMSE 199 | median 144 | p95 386 | max 518 mm
+Goal not met yet: RMSE 199 mm > 30 mm — check the per-spot table.
+
+Outputs in D:\UWB_3\matlab\results\static_accuracy_20260720_195637

@@ -76,8 +76,12 @@ python3 -m venv .venv && .venv/bin/pip install -e "python/[all]"
 
 ## Outstanding for v1.0.0
 
-- [ ] ⬜ **Datasets** — rover runs, static campaign, CIR captures, self-survey captures
-      curated and published; `docs/datasets.md` updated with the real link and DOI
+- [x] ✅ **Datasets** — 17 curated rover runs, static campaign, CIR and self-survey captures
+      now ship in `data/` (CC BY 4.0, checksummed). Still outstanding within it:
+  - [ ] ⬜ `data/environment/` — site map, anchor layout drawing, deployment photos
+  - [ ] ⬜ `data/raw/` — unparsed serial captures and host session logs (28 tests still skip
+        without these)
+  - [ ] ⬜ a Zenodo DOI for the data, added to `data/README.md`
 - [ ] ⬜ **CAD** — `hardware/cad/`
 - [ ] ⬜ **Datasheets** — `hardware/datasheets/`
 - [ ] ⬜ **Board photos** — `hardware/images/`

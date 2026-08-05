@@ -102,7 +102,7 @@ flowchart TD
 | [`examples/`](examples/) | Small runnable demos — start here. |
 | [`hardware/`](hardware/) | CAD, datasheets, board photos. |
 | [`docs/`](docs/) | Everything below. |
-| [`data/`](data/) | Datasets — distributed separately, see [docs/datasets.md](docs/datasets.md). |
+| [`data/`](data/) | **The dataset** — 17 ranked rover runs with ground truth, static campaign, CIR and survey captures. CC BY 4.0. |
 
 ---
 
@@ -180,7 +180,15 @@ a newer transceiver — a DW3000, say — is confined to the driver layer.
 | Offline replay and reports | ✅ |
 | Documentation | ✅ |
 | CAD, datasheets, board photos | ⬜ pending |
-| Datasets (rover runs, static campaign, CIR, survey) | ⬜ pending curation |
+| Datasets (17 rover runs, static campaign, CIR, survey) | ✅ in [`data/`](data/) |
+
+## Authors
+
+- **Atharva Chavan** ([@athrvchvn](https://github.com/athrvchvn)) — Department of Mechanical
+  Engineering, IIT Indore
+- **Adersh M** ([@AdershM-2](https://github.com/AdershM-2)) — Department of Mechanical
+  Engineering, IIT Kanpur
+- **Ashish Dutta** — Department of Mechanical Engineering, IIT Kanpur
 
 ## Citing
 
@@ -188,8 +196,12 @@ If DUNE is useful in your work, please cite the paper — see [CITATION.cff](CIT
 
 ## License
 
-MIT, except the vendored Decawave/thotro DW1000 driver under
+Code is **MIT**, except the vendored Decawave/thotro DW1000 driver under
 `firmware/libraries/UwbRtls/src/dw1000/`, which is Apache-2.0 and retains its upstream
 headers. See [LICENSE](LICENSE).
+
+The **dataset in [`data/`](data/) is CC BY 4.0** — a different licence from the code, because
+data and software are different kinds of thing. See [`data/LICENSE-DATA.md`](data/LICENSE-DATA.md).
+The loaders in `data/tools/` are MIT like the rest of the code.
 
 Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).

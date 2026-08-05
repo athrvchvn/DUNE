@@ -1,0 +1,411 @@
+{
+  "version": 4,
+  "schema": "uwb_rtls_calibration_v4",
+  "created_at": "2026-07-11T02:30:12",
+  "anchor_config_hash": "92d2c6a145abb62a",
+  "level1_hardware": {
+    "method": "hwcalib_binary_search",
+    "note": "Antenna delay stored in anchor NVS (set by HWCALIB). Traceability only \u2014 NOT applied by the host pipeline.",
+    "boards": {
+      "0x01": {
+        "antenna_delay_ticks": 16392,
+        "calibrated_at": "2026-07-11T02:28:22",
+        "true_mm": 2701,
+        "final_mean_mm": 2710,
+        "residual_mm": 9,
+        "git_commit": "e402083",
+        "iteration_history": [
+          {
+            "it": 0,
+            "delay": 16350,
+            "mean_mm": 2891,
+            "err_mm": 190
+          },
+          {
+            "it": 2,
+            "delay": 16487,
+            "mean_mm": 2257,
+            "err_mm": -443
+          },
+          {
+            "it": 3,
+            "delay": 16418,
+            "mean_mm": 2581,
+            "err_mm": -119
+          },
+          {
+            "it": 5,
+            "delay": 16401,
+            "mean_mm": 2667,
+            "err_mm": -33
+          },
+          {
+            "it": 6,
+            "delay": 16392,
+            "mean_mm": 2702,
+            "err_mm": 1
+          },
+          {
+            "it": 7,
+            "delay": 16396,
+            "mean_mm": 2686,
+            "err_mm": -14
+          },
+          {
+            "it": 8,
+            "delay": 16394,
+            "mean_mm": 2689,
+            "err_mm": -11
+          },
+          {
+            "it": 9,
+            "delay": 16393,
+            "mean_mm": 2696,
+            "err_mm": -4
+          },
+          {
+            "it": 10,
+            "delay": 16392,
+            "mean_mm": 2703,
+            "err_mm": 2
+          },
+          {
+            "it": 11,
+            "delay": 16392,
+            "mean_mm": 2708,
+            "err_mm": 7
+          },
+          {
+            "it": 12,
+            "delay": 16392,
+            "mean_mm": 2712,
+            "err_mm": 11
+          },
+          {
+            "it": 13,
+            "delay": 16392,
+            "mean_mm": 2707,
+            "err_mm": 6
+          }
+        ]
+      },
+      "0x02": {
+        "antenna_delay_ticks": 16517,
+        "calibrated_at": "2026-07-11T02:29:00",
+        "true_mm": 2595,
+        "final_mean_mm": 2609,
+        "residual_mm": 14,
+        "git_commit": "e402083",
+        "iteration_history": [
+          {
+            "it": 0,
+            "delay": 16350,
+            "mean_mm": 3393,
+            "err_mm": 798
+          },
+          {
+            "it": 1,
+            "delay": 16625,
+            "mean_mm": 2102,
+            "err_mm": -492
+          },
+          {
+            "it": 2,
+            "delay": 16487,
+            "mean_mm": 2747,
+            "err_mm": 152
+          },
+          {
+            "it": 3,
+            "delay": 16556,
+            "mean_mm": 2433,
+            "err_mm": -161
+          },
+          {
+            "it": 4,
+            "delay": 16521,
+            "mean_mm": 2572,
+            "err_mm": -22
+          },
+          {
+            "it": 5,
+            "delay": 16504,
+            "mean_mm": 2671,
+            "err_mm": 76
+          },
+          {
+            "it": 6,
+            "delay": 16512,
+            "mean_mm": 2635,
+            "err_mm": 40
+          },
+          {
+            "it": 7,
+            "delay": 16516,
+            "mean_mm": 2619,
+            "err_mm": 24
+          },
+          {
+            "it": 8,
+            "delay": 16518,
+            "mean_mm": 2590,
+            "err_mm": -4
+          },
+          {
+            "it": 9,
+            "delay": 16517,
+            "mean_mm": 2606,
+            "err_mm": 11
+          },
+          {
+            "it": 10,
+            "delay": 16517,
+            "mean_mm": 2608,
+            "err_mm": 13
+          },
+          {
+            "it": 11,
+            "delay": 16517,
+            "mean_mm": 2593,
+            "err_mm": -1
+          },
+          {
+            "it": 12,
+            "delay": 16517,
+            "mean_mm": 2607,
+            "err_mm": 12
+          },
+          {
+            "it": 13,
+            "delay": 16517,
+            "mean_mm": 2601,
+            "err_mm": 6
+          }
+        ]
+      },
+      "0x03": {
+        "antenna_delay_ticks": 16396,
+        "calibrated_at": "2026-07-11T02:29:33",
+        "true_mm": 1454,
+        "final_mean_mm": 1461,
+        "residual_mm": 7,
+        "git_commit": "e402083",
+        "iteration_history": [
+          {
+            "it": 0,
+            "delay": 16350,
+            "mean_mm": 1673,
+            "err_mm": 219
+          },
+          {
+            "it": 2,
+            "delay": 16487,
+            "mean_mm": 1029,
+            "err_mm": -424
+          },
+          {
+            "it": 3,
+            "delay": 16418,
+            "mean_mm": 1350,
+            "err_mm": -103
+          },
+          {
+            "it": 4,
+            "delay": 16384,
+            "mean_mm": 1512,
+            "err_mm": 58
+          },
+          {
+            "it": 6,
+            "delay": 16392,
+            "mean_mm": 1478,
+            "err_mm": 24
+          },
+          {
+            "it": 7,
+            "delay": 16396,
+            "mean_mm": 1457,
+            "err_mm": 3
+          },
+          {
+            "it": 8,
+            "delay": 16398,
+            "mean_mm": 1453,
+            "err_mm": 0
+          },
+          {
+            "it": 9,
+            "delay": 16397,
+            "mean_mm": 1449,
+            "err_mm": -4
+          },
+          {
+            "it": 10,
+            "delay": 16396,
+            "mean_mm": 1449,
+            "err_mm": -4
+          },
+          {
+            "it": 11,
+            "delay": 16396,
+            "mean_mm": 1454,
+            "err_mm": 0
+          },
+          {
+            "it": 12,
+            "delay": 16396,
+            "mean_mm": 1446,
+            "err_mm": -7
+          },
+          {
+            "it": 13,
+            "delay": 16396,
+            "mean_mm": 1447,
+            "err_mm": -6
+          }
+        ]
+      },
+      "0x04": {
+        "antenna_delay_ticks": 16381,
+        "calibrated_at": "2026-07-10T04:35:04",
+        "true_mm": 1745,
+        "final_mean_mm": 1752,
+        "residual_mm": 7,
+        "git_commit": "e402083",
+        "iteration_history": [
+          {
+            "it": 0,
+            "delay": 16350,
+            "mean_mm": 1895,
+            "err_mm": 150
+          },
+          {
+            "it": 1,
+            "delay": 16625,
+            "mean_mm": 589,
+            "err_mm": -1155
+          },
+          {
+            "it": 2,
+            "delay": 16487,
+            "mean_mm": 1243,
+            "err_mm": -501
+          },
+          {
+            "it": 4,
+            "delay": 16384,
+            "mean_mm": 1720,
+            "err_mm": -24
+          },
+          {
+            "it": 5,
+            "delay": 16367,
+            "mean_mm": 1796,
+            "err_mm": 51
+          },
+          {
+            "it": 6,
+            "delay": 16375,
+            "mean_mm": 1768,
+            "err_mm": 23
+          },
+          {
+            "it": 7,
+            "delay": 16379,
+            "mean_mm": 1747,
+            "err_mm": 2
+          },
+          {
+            "it": 8,
+            "delay": 16381,
+            "mean_mm": 1740,
+            "err_mm": -4
+          },
+          {
+            "it": 9,
+            "delay": 16380,
+            "mean_mm": 1737,
+            "err_mm": -7
+          },
+          {
+            "it": 12,
+            "delay": 16379,
+            "mean_mm": 1737,
+            "err_mm": -7
+          },
+          {
+            "it": 0,
+            "delay": 16350,
+            "mean_mm": 1881,
+            "err_mm": 136
+          },
+          {
+            "it": 1,
+            "delay": 16625,
+            "mean_mm": 597,
+            "err_mm": -1147
+          },
+          {
+            "it": 2,
+            "delay": 16487,
+            "mean_mm": 1233,
+            "err_mm": -511
+          },
+          {
+            "it": 4,
+            "delay": 16384,
+            "mean_mm": 1720,
+            "err_mm": -24
+          },
+          {
+            "it": 5,
+            "delay": 16367,
+            "mean_mm": 1797,
+            "err_mm": 52
+          },
+          {
+            "it": 6,
+            "delay": 16375,
+            "mean_mm": 1773,
+            "err_mm": 28
+          },
+          {
+            "it": 7,
+            "delay": 16379,
+            "mean_mm": 1745,
+            "err_mm": 0
+          },
+          {
+            "it": 8,
+            "delay": 16381,
+            "mean_mm": 1745,
+            "err_mm": 0
+          },
+          {
+            "it": 11,
+            "delay": 16381,
+            "mean_mm": 1754,
+            "err_mm": 9
+          },
+          {
+            "it": 12,
+            "delay": 16381,
+            "mean_mm": 1746,
+            "err_mm": 1
+          },
+          {
+            "it": 13,
+            "delay": 16381,
+            "mean_mm": 1739,
+            "err_mm": -5
+          }
+        ]
+      }
+    }
+  },
+  "level2_spatial": {
+    "note": "Per-anchor systematic error handled by the spatial error map.",
+    "error_map_path": "error_map.json",
+    "error_map_hash": "6d3eda7059549ae8"
+  }
+}

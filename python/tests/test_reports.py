@@ -24,10 +24,11 @@ from host.paths import PathNotAllowed, list_files, resolve_under_repo  # noqa: E
 from reports.rover import fit_rigid_2d                        # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
-RAW_CAPTURE = (REPO / 'data' / 'static_campaign'
+RAW_CAPTURE = (REPO / 'data' / 'static' / 'static_accuracy_20260720_195637'
                / 'serial_raw.log')
 ANCHORS_5 = REPO / 'config' / 'anchors_kinect_clicked_20260724.json'
-ROVER_RUNS = sorted((REPO / 'data' / 'rover_runs').glob('*.mat'))
+# One .mat per run folder, ranked best-first: data/runs/run_01_*/run.mat
+ROVER_RUNS = sorted((REPO / 'data' / 'runs').glob('run_*/run.mat'))
 
 h5py = pytest.importorskip('h5py', reason="h5py needed for MATLAB v7.3 .mat")
 
@@ -268,7 +269,8 @@ def test_a_mismatched_anchor_geometry_is_flagged(tmp_path):
 def test_a_non_rover_mat_is_rejected_with_a_clear_message(tmp_path):
     from reports.rover import rover_report
 
-    other = REPO / 'data' / 'static_campaign' / 'bakeoff.mat'
+    other = (REPO / 'data' / 'static' / 'static_accuracy_20260720_195637'
+             / 'bakeoff.mat')
     if not other.exists():
         pytest.skip("no non-rover .mat to test with")
     with pytest.raises(Exception) as e:

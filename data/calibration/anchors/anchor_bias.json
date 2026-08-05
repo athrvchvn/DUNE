@@ -1,0 +1,18 @@
+{
+  "schema": "dune_anchor_bias_v1",
+  "date": "2026-07-01",
+  "source": "anchor self-survey (serial-triggered via tag 240), 41-51 samples/pair, survey_fit.m",
+  "note": "Additive per-anchor range bias in metres; corrected_range = raw - bias_anchor - bias_tag. Fit residual RMS 33.6 mm over 10 pairs against tape geometry rect 6.3x3.0, A5 top edge at x=3.3.",
+  "tick_equivalent_info": "1 tick ~ 4.69 mm pair-range; delay_correction_ticks = bias_m / 0.00469",
+  "anchors": [
+    { "id": 1, "bias_m": 0.2242, "ticks": 47.8 },
+    { "id": 2, "bias_m": 0.1983, "ticks": 42.3 },
+    { "id": 3, "bias_m": -0.0252, "ticks": -5.4 },
+    { "id": 4, "bias_m": -0.1335, "ticks": -28.5 },
+    { "id": 5, "bias_m": -0.1861, "ticks": -39.7 }
+  ],
+  "tags": [
+    { "id": 240, "bias_m": 0.4342, "note": "Phase C static fit 2026-07-01, 216 sweeps, A1 absent (4 anchors)" },
+    { "id": 241, "bias_m": -0.0681, "note": "Phase C static fit 2026-07-01, 848 sweeps, A1 absent (4 anchors)" }
+  ]
+}

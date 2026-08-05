@@ -1,0 +1,30 @@
+{
+  "run_id": "run_09_20260724_185233",
+  "source_capture": "rover_uwb_20260724_185233",
+  "date_utc": "20260724",
+  "time_local": "185233",
+  "duration_s": 139.6,
+  "uwb_sweeps": 1149,
+  "control_samples": 169,
+  "gt_coverage": 1.0,
+  "path_length_m": 2.99,
+  "n_anchors": 5,
+  "mean_anchors_per_sweep": 4.95,
+  "frac_sweeps_ge4": 1.0,
+  "n_tags": 2,
+  "mean_range_hz": 8.23,
+  "anchor_ids": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "quality_score": 0.6001,
+  "ground_truth": "apriltag_ceiling_kinect",
+  "notes": "",
+  "anchors_layout": "self_survey_raw_survey_20260724_164356",
+  "front_tag_id": 241,
+  "rear_tag_id": 240,
+  "tag_baseline_m": 0.527
+}

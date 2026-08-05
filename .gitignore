@@ -4,11 +4,10 @@ logs/
 results/
 
 # ── Datasets ─────────────────────────────────────────────────────────────────
-# data/ ships only its README; the curated dataset drop is distributed
-# separately (see docs/datasets.md). This keeps a stray 300 MB log out of git.
-data/*
-!data/README.md
-!data/.gitkeep
+# data/ IS tracked: the curated dataset (14 MB, 17 runs, checksummed) ships with
+# the code so a clone reproduces the paper's numbers. It carries its own CC BY
+# 4.0 licence — see data/LICENSE-DATA.md. Raw unparsed captures stay out.
+data/**/*.raw
 
 # ── Python ───────────────────────────────────────────────────────────────────
 __pycache__/

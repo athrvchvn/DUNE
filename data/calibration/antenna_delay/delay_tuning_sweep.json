@@ -1,0 +1,90 @@
+{
+  "schema": "dune_delay_tuning_sweep_v1",
+  "timestamp": "2026-07-20T19:31:24",
+  "method": "sweep-path feedback tuning via SETANTDELAY vs Kinect click-truth",
+  "reference_tag": 240,
+  "truth_file": "D:\\UWB_3\\matlab\\config\\tag_truth.json",
+  "truth_tag_xy": [
+    0.1065,
+    0.4424
+  ],
+  "position_err_mm": 4.4,
+  "anchors": [
+    {
+      "id": 1,
+      "true_m": 2.8671,
+      "final_med_m": 2.871,
+      "final_err_mm": 4,
+      "final_ticks": 16501,
+      "verdict": "PASS"
+    },
+    {
+      "id": 2,
+      "true_m": 3.626,
+      "final_med_m": 3.641,
+      "final_err_mm": 15,
+      "final_ticks": 16515,
+      "verdict": "PASS"
+    },
+    {
+      "id": 3,
+      "true_m": 3.732,
+      "final_med_m": 3.716,
+      "final_err_mm": -16,
+      "final_ticks": 16488,
+      "verdict": "PASS"
+    },
+    {
+      "id": 4,
+      "true_m": 3.0073,
+      "final_med_m": 3.017,
+      "final_err_mm": 10,
+      "final_ticks": 16483,
+      "verdict": "PASS"
+    },
+    {
+      "id": 5,
+      "true_m": 1.9555,
+      "final_med_m": 1.971,
+      "final_err_mm": 16,
+      "final_ticks": 16552,
+      "verdict": "PASS"
+    }
+  ],
+  "history": [
+    {
+      "iter": 1,
+      "err_mm": [
+        337,
+        43,
+        514,
+        305,
+        72
+      ],
+      "ticks": [
+        16429,
+        16506,
+        16378,
+        16418,
+        16537
+      ]
+    },
+    {
+      "iter": 2,
+      "err_mm": [
+        4,
+        15,
+        -16,
+        10,
+        16
+      ],
+      "ticks": [
+        16501,
+        16515,
+        16488,
+        16483,
+        16552
+      ]
+    }
+  ]
+}

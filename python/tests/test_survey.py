@@ -206,8 +206,8 @@ def test_per_anchor_delay_fit_recovers_injected_biases():
 
 # ── tag bias ──────────────────────────────────────────────────────────────────
 
-STATIC_CAPTURE = REPO / 'data' / 'static_campaign' / 'static_capture.txt'
-TAG_BIAS_MAT = REPO / 'data' / 'static_campaign' / 'tag_bias_fit.mat'
+STATIC_CAPTURE = REPO / 'data' / 'static' / 'static_capture.txt'
+TAG_BIAS_MAT = REPO / 'data' / 'static' / 'tag_bias_fit.mat'
 # The geometry anchor_bias.json was fitted against — it names the layout in its
 # own `note` field ("rect 6.3x3.0, A5 top edge at x=3.3").
 ANCHORS_RECT = REPO / 'config' / 'anchors_rect6p3x3p0_2026-07-01.json'

@@ -5,12 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ## [Unreleased]
 
+### Added
+
+- **The dataset**, in `data/` — 17 rover runs ranked by capture quality, the
+  static-accuracy campaign, channel-impulse-response captures, anchor self-survey
+  captures, and the calibration state behind the paper's numbers. 14 MB, checksummed,
+  with its own loaders and documentation. Licensed **CC BY 4.0**, distinct from the
+  code's MIT.
+- Test paths and the GUI file browser now follow the dataset's documented layout, so 16
+  previously-skipped tests run: **225 passed, 28 skipped** (was 209 / 44).
+
 ### Pending before v1.0.0 is tagged
 
-- ⬜ Datasets — rover runs, static campaign, CIR captures, self-survey captures — curated
-  and published with a DOI (`docs/datasets.md`)
+- ⬜ `data/environment/` and `data/raw/` (the remaining 28 skips need `data/raw/`)
 - ⬜ CAD, datasheets and board photos (`hardware/`)
-- ⬜ Zenodo DOI in `CITATION.cff`, `README.md` and the paper
+- ⬜ Zenodo DOIs — one for the code, one for the data — in `CITATION.cff`, `README.md`,
+  `data/README.md` and the paper
 
 ## [1.0.0] — unreleased
 

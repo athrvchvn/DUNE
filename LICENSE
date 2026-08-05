@@ -33,3 +33,12 @@ the MIT license above. It is:
 See libraries/UwbRtls/src/dw1000/LICENSE.md for the full text. Modifications
 made in this repository to that driver (e.g. carrier-integrator and SAR
 temperature/Vbat reads) remain under the Apache License 2.0.
+
+---
+DATASET
+
+The dataset under data/ is NOT covered by the MIT license above. It is licensed
+Creative Commons Attribution 4.0 International (CC BY 4.0).
+
+See data/LICENSE-DATA.md for the full terms. The loader scripts in data/tools/
+are MIT, like the rest of the code in this repository.

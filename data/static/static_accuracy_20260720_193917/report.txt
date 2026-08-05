@@ -1,0 +1,34 @@
+DUNE step-5 static accuracy — 20260720_193917
+Anchors: D:\UWB_3\matlab\config\anchors.json (clicked_kinect_2026-07-20_z0.24)
+Tag 240, tagZ 0.24 m, 20 s per spot
+
+Spot 1: truth (2.320, 0.535)   sweeps 165 (93% solved)
+  median pos (2.303, 0.544)   offset [-17 +9] mm (|19| mm)
+  2D err: RMSE 42 | median 34 | p95 78 | max 117 mm   scatter std 20 mm
+  per-anchor range err (med, mm): A1 -205  A2 -3175  A3 -2968  A4 -17  A5 -2677  A2.975600e+03 +2762  A5.600000e+00 -208  A2.126000e+02 -1  A3.163600e+03 +2950  A5.036000e+02 +290  A-2.191000e+02 +2430  A-3.189100e+03 -540  A-2.982100e+03 -333  A-3.110000e+01 +2618  A-2.691100e+03 -42
+
+Spot 2: truth (2.745, -0.650)   sweeps 196 (99% solved)
+  median pos (2.577, -0.613)   offset [-168 +37] mm (|172| mm)
+  2D err: RMSE 178 | median 175 | p95 227 | max 308 mm   scatter std 29 mm
+  per-anchor range err (med, mm): A1 -126  A2 -4152  A3 -2223  A4 NaN  A5 -1733  A4.249500e+03 +2112  A2.235000e+02 -1914  A2.152500e+03 +15  ANaN NaN  A2.642500e+03 +505  A-7.942000e+02 +1520  A-4.820200e+03 -2506  A-2.891200e+03 -577  ANaN NaN  A-2.401200e+03 -87
+
+Spot 3: truth (-1.067, -0.733)   sweeps 154 (99% solved)
+  median pos (-1.057, -0.806)   offset [+10 -73] mm (|74| mm)
+  2D err: RMSE 116 | median 83 | p95 171 | max 575 mm   scatter std 76 mm
+  per-anchor range err (med, mm): A1 +118  A2 +3355  A3 +3857  A4 +1882  A5 +1952  A-3.115200e+03 -3865  A1.218000e+02 -628  A6.238000e+02 -126  A-1.351200e+03 -2101  A-1.281200e+03 -2031  A-1.669100e+03 -2056  A1.567900e+03 +1181  A2.069900e+03 +1683  A9.490000e+01 -292  A1.649000e+02 -222
+
+Spot 4: truth (1.025, 1.158)   sweeps 177 (99% solved)
+  median pos (1.055, 1.277)   offset [+30 +119] mm (|123| mm)
+  2D err: RMSE 131 | median 126 | p95 191 | max 231 mm   scatter std 29 mm
+  per-anchor range err (med, mm): A1 -238  A2 -811  A3 -1510  A4 -529  A5 -2903  A6.279000e+02 +1190  A5.490000e+01 +617  A-6.441000e+02 -82  A3.369000e+02 +899  A-2.037100e+03 -1475  A2.367000e+02 +2640  A-3.363000e+02 +2067  A-1.035300e+03 +1368  A-5.430000e+01 +2349  A-2.428300e+03 -25
+
+Spot 5: truth (2.320, 1.141)   sweeps 142 (94% solved)
+  median pos (2.311, 1.144)   offset [-9 +2] mm (|9| mm)
+  2D err: RMSE 46 | median 32 | p95 72 | max 216 mm   scatter std 26 mm
+  per-anchor range err (med, mm): A1 -212  A2 -2904  A3 -3659  A4 -412  A5 -3162  A2.698400e+03 +3440  A6.900000e+00 +748  A-7.481000e+02 -7  A2.498900e+03 +3240  A-2.511000e+02 +490  A1.444000e+02 +3047  A-2.547100e+03 +355  A-3.302100e+03 -400  A-5.510000e+01 +2847  A-2.805100e+03 +97
+
+================ OVERALL (5 spots, 809 sweeps) ================
+2D error: RMSE 121 | median 93 | p95 198 | max 575 mm
+Goal not met yet: RMSE 121 mm > 30 mm — check the per-spot table.
+
+Outputs in D:\UWB_3\matlab\results\static_accuracy_20260720_193917

@@ -1,106 +1,114 @@
 # Datasets
 
-> ## ⬜ Status: pending curation
->
-> The datasets described here **are not yet published**. They exist — every number in the
-> paper comes from them — but they have not been curated into a citable release. Until then
-> the repository ships code and configuration only, and `data/` holds just its README.
->
-> This is a known gap and it is tracked in [release_checklist.md](release_checklist.md).
+**The dataset ships with the code, in [`data/`](../data/).** Clone the repository and you
+have it — 14 MB, 17 curated rover runs with ground truth, the static-accuracy campaign, the
+channel-impulse-response captures and the anchor self-survey captures.
 
-## Why they are not in the repository
+> **Licence differs from the code.** `data/` is **CC BY 4.0**; the rest of the repository is
+> MIT. See [`data/LICENSE-DATA.md`](../data/LICENSE-DATA.md).
 
-Git stores every version of every file forever. The recorded campaigns run to hundreds of
-megabytes, and a clone of the source should not cost that. Data therefore ships as a
-separate versioned archive with its own DOI — which is also what makes it *citable*
-independently of the code.
+[`data/README.md`](../data/README.md) is the authority on layout and contents. This page is
+the short version and how it connects to the pipelines.
 
-## What the drop will contain
+## Layout
 
-All of it recorded on a single clock, so the streams align exactly rather than by inference.
+```
+data/
+├── runs/          17 driven rover runs, ranked best-first
+├── static/        static-accuracy campaign, fixed positions and long dwells
+├── cir/           channel-impulse-response captures
+├── survey/        anchor self-survey captures + MDS solutions
+├── calibration/   the calibration state used for the paper's numbers
+├── environment/   site map, layout drawing, photos     📥 to be added
+├── raw/           unparsed serial and session logs      📥 to be added
+├── tools/         loaders for Python and MATLAB, checksum verifier
+├── docs/          file formats, frames, ground truth, known issues
+├── manifest.csv   machine-readable index over all 17 runs — load this first
+└── checksums.sha256
+```
 
-### Rover runs
+Each run is self-contained:
 
-28 teleoperated driven sessions, each with:
+```
+runs/run_01_20260725_184427/
+├── run.mat        MATLAB v7.3 — UWB ranges, ground truth, IMU, wheels
+├── metadata.json  machine-readable summary
+└── report.png     rendered trajectory / error report
+```
 
-- UWB sweeps from **both** tags with full per-anchor radio diagnostics — range, received
-  power, first-path power, receive quality, carrier frequency offset
-- AprilTag fiducial ground truth from the overhead Kinect
-- inertial data (quaternion, acceleration, gyro rate)
-- wheel encoder / command data
+Runs are ranked by **capture quality, not date** — `run_01` is the best of 67 candidates.
+`run_17` is deliberately a 4-anchor capture so the set supports geometry-degradation
+analysis rather than only the easy case. The criteria are in
+[`data/docs/run_selection.md`](../data/docs/run_selection.md).
 
-Includes the two runs analysed in the paper: the estimator comparison (126 mm rigid MHE vs
-171 mm per-tag EKF) and the best-scoring run (95 mm).
-
-Format: MATLAB v7.3 `.mat` plus a streaming `.ndjson` written as the run happens, so a
-session that dies mid-drive still leaves everything up to that moment. Both pipelines read
-both.
-
-### Static accuracy campaign
-
-20 surveyed positions, **2471 sweeps**, 20 s dwell per position, with camera-derived truth
-for each. This is the data the Tier-2 correction was fitted and cross-validated on
-(leave-one-position-out), and the data behind the 199 mm → 94 mm result and the 72 mm oracle
-bound.
-
-### Channel impulse response captures
-
-Raw DW1000 accumulator readouts supporting the multipath analysis — the measurements showing
-the direct path ≈20 dB below the strongest reflection and only 8–10 dB above noise, which is
-what sets the accuracy floor. Captured with `matlab/scripts/cir_capture.m`.
-
-### Anchor self-survey captures
-
-Raw inter-anchor pairwise ranging sessions and the reconstructed geometries, behind the
-49 mm raw / 42 mm shape survey result.
-
-## Configuration is already here
-
-The `config/` directory in this repository holds the deployment's actual parameters — anchor
-geometry, per-anchor Tier-2 coefficients, Tier-1 traceability records, camera calibration
-and world registration. That is configuration rather than data, it is small, and the code
-does not run without it, so it is tracked.
-
-| File | What |
-|---|---|
-| `anchors.json` | the active anchor geometry |
-| `anchors_kinect_clicked_20260724.json` | the 5-anchor layout the reported results use |
-| `anchors_dune_selfsurvey_20260725.json` | the same constellation, recovered by self-survey |
-| `range_correction.json` | Tier-2 per-anchor coefficients, LOPO-fitted |
-| `calibration.json` | Tier-1 antenna-delay traceability, with iteration history |
-| `kinect_vision.json` | overhead camera intrinsics and pose |
-| `error_map.json` | the retired spatial map, kept as a recorded result |
-
-> Note that `config/anchors.json` currently holds a **4-anchor** layout. The 5-anchor
-> deployment the paper reports is `anchors_kinect_clicked_20260724.json` — pass it
-> explicitly when replaying those sessions, as the tests and examples do.
-
-## Using the drop
-
-Unpack into `data/`, matching the layout in [`data/README.md`](../data/README.md). Then:
+## Verify your copy
 
 ```bash
-python -m pytest python/tests -q     # the 44 skipped tests now run
+cd data && sha256sum -c checksums.sha256      # 177 files
 ```
+
+## Using it
+
+Quickest look, no DUNE install needed:
+
+```bash
+python3 data/tools/load_run.py data/runs/run_01_20260725_184427
+```
+
+Score a run through the full pipeline:
 
 ```python
 from reports.rover import rover_report
-rover_report('data/rover_runs/rover_uwb_20260726_131929.mat', 'results/out',
-             anchors_file='config/anchors_kinect_clicked_20260724.json', tag_z=0.24)
+r = rover_report('data/runs/run_01_20260725_184427/run.mat', 'results/out',
+                 anchors_file='config/anchors_kinect_clicked_20260724.json', tag_z=0.24)
 ```
+
+```matlab
+rover_run_report(fullfile(dune.dataDir(), 'runs', 'run_01_20260725_184427', 'run.mat'))
+mhe_replay(...)   % EKF vs rigid MHE on identical sweeps
+```
+
+Or from the browser: **GUI → LAB → Rover run report**, which lists all 17 in the file picker.
+
+## What it unlocks
+
+The dataset is what makes the test suite complete:
+
+| | Passed | Skipped |
+|---|---|---|
+| Without `data/` | 209 | 44 |
+| With `data/` | **225** | 28 |
+
+The remaining 28 skips need `data/raw/` (session logs in `.jsonl`) and two static-campaign
+artefacts, both still to be added — see the 📥 rows above.
+
+## Two directories that sound alike
+
+`config/` and `data/calibration/` are not the same thing:
+
+- **`config/`** — the **live** parameters the pipelines read right now. Edit these.
+- **`data/calibration/`** — a **snapshot** of the calibration state as it was when the runs
+  were captured. Provenance, not configuration. Read it to understand a run; do not point
+  the pipeline at it.
 
 ## Recording your own
 
-Nothing here is special to our arena. A capture is one command:
+Nothing here is specific to our arena:
 
 ```bash
 python python/run_localization.py       # GUI → RUN → start / stop; scoring is automatic
 ```
 
 ```matlab
-rover_teleop_uwb                        % MATLAB equivalent
+rover_teleop_uwb
 ```
 
 Ground truth is optional — without it you still get sweeps, diagnostics and estimator
-output, which is enough for everything except absolute scoring. See
-[vision_ground_truth.md](vision_ground_truth.md) if you want truth too.
+output, which covers everything except absolute scoring. See
+[vision_ground_truth.md](vision_ground_truth.md).
+
+## Citing
+
+The dataset is covered by the paper's citation ([`CITATION.cff`](../CITATION.cff)). A
+separate Zenodo DOI for the data is still to be minted — see
+[release_checklist.md](release_checklist.md).

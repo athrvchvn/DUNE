@@ -37,13 +37,19 @@ BROWSABLE: dict[str, tuple[tuple[Path, str], ...]] = {
                    (MATLAB_DIR / 'logs', 'udp_raw_*.log'),
                    (PYTHON_DIR / 'logs', '*.jsonl'),
                    (PYTHON_DIR / 'logs', '*.ndjson')),
+    # Captures this session recorded come first; the shipped dataset second, so
+    # the picker opens on your own work but the curated runs are always one
+    # scroll away. Dataset paths follow data/README.md — that layout is
+    # checksummed and documented, so it is the authority, not this file.
     'rover_runs': ((RESULTS_DIR / 'rover_runs', '*.mat'),
-                   (DATA_DIR / 'rover_runs', '*.mat')),
-    'results':    ((RESULTS_DIR, '*/report.txt'),),
-    'config':     ((CONFIG_DIR, 'anchors*.json'),),
+                   (DATA_DIR / 'runs', 'run_*/run.mat')),
+    'results':    ((RESULTS_DIR, '*/report.txt'),
+                   (DATA_DIR / 'static', '*/report.txt')),
+    'config':     ((CONFIG_DIR, 'anchors*.json'),
+                   (DATA_DIR / 'calibration' / 'anchors', 'anchors*.json')),
     'captures':   ((RESULTS_DIR, 'static_capture.txt'),
                    (RESULTS_DIR, '*/serial_raw.log'),
-                   (DATA_DIR / 'static_campaign', '*.txt'),
+                   (DATA_DIR / 'static', '*/serial_raw.log'),
                    (LOGS_DIR, 'serial_raw_*.log'),
                    (LOGS_DIR, 'udp_raw_*.log')),
     'survey':     ((RESULTS_DIR / 'survey_runs', 'survey_*.txt'),

@@ -1,0 +1,41 @@
+{
+  "fx": 1050.0,
+  "fy": 1050.0,
+  "cx": 960.0,
+  "cy": 540.0,
+  "dist_coeffs": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "image_width": 1920,
+  "image_height": 1080,
+  "mounting_height_m": 3.873440313802746,
+  "mirror_flip": true,
+  "intrinsics_calibrated_at": null,
+  "intrinsics_rms_px": null,
+  "height_calibrated_at": null,
+  "height_z_error_m": null,
+  "camcal_source": "camera_calibration.mat (Adersh M, MATLAB)",
+  "camcal_date": "2026-07-09 16:46:23",
+  "nadir_px": [
+    890.7760447277868,
+    529.514252880917
+  ],
+  "tilt_deg_diagnostic": 3.814814710816982,
+  "apriltag_family": "tag16h5",
+  "apriltag_size_m": 0.05,
+  "apriltag_min_decision_margin": 30.0,
+  "bounds_padding_m": 2.0,
+  "anchor_jump_warn_m": 0.5,
+  "tag_roles": {
+    "1": "anchor1",
+    "2": "anchor2",
+    "3": "anchor3",
+    "4": "anchor4",
+    "5": "tagA",
+    "6": "tagB"
+  }
+}
