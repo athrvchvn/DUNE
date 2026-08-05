@@ -35,9 +35,22 @@ def _script() -> str:
     return '\n'.join(blocks)
 
 
+# `print` is a QuickJS built-in and does not exist in Node. These tests were
+# written against qjs, so all twelve of them that report success this way died
+# with "print is not defined" the first time CI ran them: the runner image
+# ships Node and no qjs, and the engine here is picked by whichever is found.
+# That failure cannot occur on a developer machine that has qjs installed,
+# which is why it survived to the first push.
+#
+# Shimming once, here, beats rewriting thirteen call sites, and beats narrowing
+# the engine to qjs — that would make CI silently stop exercising the GUI at
+# all, which is worse than the bug.
+JS_SHIM = "if (typeof print === 'undefined') { globalThis.print = console.log; }\n"
+
+
 def _run_js(source: str, tmp_path: Path) -> str:
     path = tmp_path / 'check.js'
-    path.write_text(source)
+    path.write_text(JS_SHIM + source)
     proc = subprocess.run([QJS, str(path)], capture_output=True, text=True, timeout=60)
     if proc.returncode != 0:
         raise AssertionError(f"JS failed:\n{proc.stdout}\n{proc.stderr}")
