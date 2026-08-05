@@ -1,0 +1,10 @@
+opencv-python
+pupil-apriltags
+numpy
+
+# pylibfreenect2 is NOT reliably installable via this file directly — its
+# setup.py needs Cython<3.0 already importable (pip's build isolation won't
+# pick up a Cython listed here in time) and libfreenect2 must be built first.
+# See docs/kinect_vision_setup.md for the verified install sequence:
+#   pip install "cython<3.0"
+#   pip install --no-build-isolation pylibfreenect2

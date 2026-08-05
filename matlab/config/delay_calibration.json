@@ -1,0 +1,83 @@
+{
+  "schema": "dune_delay_calibration_v1",
+  "timestamp": "2026-07-24T16:48:49",
+  "method": "HWCALIB on-device binary search vs Kinect click-truth",
+  "reference_tag": 240,
+  "reference_tag_delay_ticks": 16360,
+  "truth_file": "D:\\UWB_3\\matlab\\config\\tag_truth.json",
+  "truth_tag_xy": [
+    0.66,
+    0.504
+  ],
+  "truth_tag_z": 0.24,
+  "registration_rmse_m": 0.013502720558675605,
+  "position_err_mm_before": 314.8,
+  "position_err_mm_after": 188.6,
+  "anchors": [
+    {
+      "id": 1,
+      "true_m": 3.3894,
+      "before_med_m": 3.509,
+      "after_med_m": 3.894,
+      "before_err_mm": 120,
+      "after_err_mm": 505,
+      "n_before": 65,
+      "n_after": 66,
+      "delay_ticks": 16355,
+      "ok": true,
+      "verdict": "CHECK"
+    },
+    {
+      "id": 2,
+      "true_m": 3.1338,
+      "before_med_m": 3.735,
+      "after_med_m": 3.209,
+      "before_err_mm": 601,
+      "after_err_mm": 75,
+      "n_before": 68,
+      "n_after": 67,
+      "delay_ticks": 16548,
+      "ok": true,
+      "verdict": "CHECK"
+    },
+    {
+      "id": 3,
+      "true_m": 3.2216,
+      "before_med_m": 3.458,
+      "after_med_m": 3.613,
+      "before_err_mm": 236,
+      "after_err_mm": 391,
+      "n_before": 68,
+      "n_after": 67,
+      "delay_ticks": 16405,
+      "ok": true,
+      "verdict": "CHECK"
+    },
+    {
+      "id": 4,
+      "true_m": 3.4505,
+      "before_med_m": 3.566,
+      "after_med_m": 3.791,
+      "before_err_mm": 115,
+      "after_err_mm": 341,
+      "n_before": 68,
+      "n_after": 66,
+      "delay_ticks": 16388,
+      "ok": true,
+      "verdict": "CHECK"
+    },
+    {
+      "id": 5,
+      "true_m": 1.7757,
+      "before_med_m": 2.3155,
+      "after_med_m": 1.858,
+      "before_err_mm": 540,
+      "after_err_mm": 82,
+      "n_before": 68,
+      "n_after": 67,
+      "delay_ticks": 16533,
+      "ok": true,
+      "verdict": "CHECK"
+    }
+  ]
+}

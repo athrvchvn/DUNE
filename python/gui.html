@@ -1,0 +1,2316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UWB RTLS — Dual-Tag Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root{
+  --bg:#06090d; --bg2:#0b1016; --panel:#0d141c; --border:#1e2d3d; --border2:#16222e;
+  --text:#c8dae8; --muted:#4a6070; --mono:'Share Tech Mono',monospace; --sans:'Barlow',sans-serif;
+  --accent:#00d4ff; --accent2:#00ff9d; --warn:#ff9d00; --danger:#ff3d5a; --violet:#a78bfa;
+  --robot:#e8f4ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--sans); overflow:hidden;
+  display:grid; grid-template-rows:52px 1fr; grid-template-columns:1fr 340px;
+}
+body.mode-diag{grid-template-columns:1fr 0px}
+
+/* ── Header / transport bar ───────────────────────────────────────────────── */
+header{
+  grid-column:1/3; display:flex; align-items:center; gap:14px; padding:0 14px;
+  background:var(--bg2); border-bottom:1px solid var(--border);
+}
+.logo{font-family:var(--mono); font-size:14px; color:var(--accent); letter-spacing:2px; white-space:nowrap}
+.logo b{color:var(--text)}
+.status-dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.status-dot.live{background:var(--accent2);box-shadow:0 0 8px var(--accent2)}
+.status-dot.stale{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.status-dot.error{background:var(--danger)}
+.status-dot.replay{background:var(--violet);box-shadow:0 0 8px var(--violet)}
+#status-text{font-family:var(--mono);font-size:11px;color:var(--muted);min-width:88px}
+.hstat{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.hstat b{color:var(--text);font-weight:400}
+#rec-dot{width:7px;height:7px;border-radius:50%;background:var(--danger);display:inline-block;margin-right:4px;animation:recblink 2s infinite}
+@keyframes recblink{0%,60%{opacity:1}80%{opacity:.25}100%{opacity:1}}
+
+/* transport (replay) */
+#transport{display:none;align-items:center;gap:8px;flex:1;min-width:0}
+body.replay #transport{display:flex}
+body.replay #live-stats{display:none}
+#live-stats{display:flex;align-items:center;gap:14px;flex:1;min-width:0}
+.tbtn{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);
+  font-size:12px;padding:3px 9px;border-radius:3px;cursor:pointer}
+.tbtn:hover{border-color:var(--accent)}
+#scrub{flex:1;min-width:60px;accent-color:var(--violet)}
+#replay-name{font-family:var(--mono);font-size:10px;color:var(--violet);max-width:180px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+#replay-time{font-family:var(--mono);font-size:11px;color:var(--text);white-space:nowrap}
+
+/* mode switch */
+#modes{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;flex-shrink:0}
+#modes button{background:transparent;border:none;color:var(--muted);font-family:var(--mono);font-size:11px;
+  letter-spacing:1px;padding:6px 13px;cursor:pointer;border-right:1px solid var(--border)}
+#modes button:last-child{border-right:none}
+#modes button.on{background:var(--accent);color:#00232e;font-weight:700}
+#modes button:disabled{opacity:.35;cursor:not-allowed}
+
+/* ── Map area ─────────────────────────────────────────────────────────────── */
+#map-wrap{position:relative;overflow:hidden;background:
+  linear-gradient(rgba(30,45,61,.25) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(30,45,61,.25) 1px,transparent 1px);
+  background-size:40px 40px}
+body.mode-diag #map-wrap{display:none}
+#canvas{position:absolute;inset:0;cursor:grab}
+#tag-legend{position:absolute;top:12px;right:12px;background:rgba(8,12,16,.85);border:1px solid var(--border);
+  border-radius:4px;padding:7px 10px;font-family:var(--mono);font-size:10px;line-height:1.9;pointer-events:none;z-index:10}
+#map-tools{position:absolute;left:12px;bottom:12px;display:flex;gap:6px;z-index:10}
+#degraded-banner{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:none;z-index:11;
+  background:rgba(40,26,4,.92);border:1px solid var(--warn);color:var(--warn);font-family:var(--mono);
+  font-size:11px;padding:5px 14px;border-radius:4px;white-space:nowrap}
+#drop-overlay{position:fixed;inset:0;display:none;z-index:100;background:rgba(6,9,13,.88);
+  border:2px dashed var(--violet);align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:16px;color:var(--violet)}
+
+/* ── Kinect live-feed panel (floating, toggleable, any mode) ─────────────── */
+#live-feed-panel{position:absolute;right:12px;bottom:12px;width:400px;
+  background:rgba(8,12,16,.92);border:1px solid var(--border);border-radius:4px;
+  overflow:hidden;z-index:10;display:none}
+#live-feed-header{display:flex;align-items:center;gap:8px;padding:5px 8px;
+  background:var(--bg2);border-bottom:1px solid var(--border2);font-family:var(--mono);
+  font-size:10px;color:var(--muted);letter-spacing:1px}
+#live-feed-header .spacer{margin-left:auto}
+#live-feed-header button{background:transparent;border:none;color:var(--muted);
+  cursor:pointer;font-size:13px;line-height:1;padding:0 2px}
+#live-feed-header button:hover{color:var(--danger)}
+#live-feed-img{width:100%;display:block;background:#000}
+#live-feed-placeholder{padding:24px 8px;text-align:center;font-family:var(--mono);
+  font-size:10px;color:var(--muted)}
+
+/* ── Diagnostics view ─────────────────────────────────────────────────────── */
+#diag-view{display:none;grid-column:1/3;overflow-y:auto;padding:18px;gap:14px;
+  grid-template-columns:repeat(auto-fit,minmax(340px,1fr));align-content:start}
+body.mode-diag #diag-view{display:grid}
+
+/* ── Right rail ───────────────────────────────────────────────────────────── */
+aside{background:var(--panel);border-left:1px solid var(--border);overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;padding:10px;gap:10px}
+body.mode-diag aside{display:none}
+.panel{background:var(--bg2);border:1px solid var(--border2);border-radius:5px;padding:10px 12px}
+.panel-title{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:8px;
+  display:flex;align-items:center;gap:8px}
+.panel-title .spacer{margin-left:auto}
+/* mode-scoped rail sections */
+.for-operate,.for-tune,.for-cal,.for-lab,.for-run{display:none}
+body.mode-operate .for-operate{display:block}
+body.mode-tune    .for-tune{display:block}
+body.mode-cal     .for-cal{display:block}
+body.mode-lab     .for-lab{display:block}
+body.mode-run     .for-run{display:block}
+/* The stop control is the largest thing on the panel, always. */
+#rv-stop{width:100%;padding:14px;font-size:15px;letter-spacing:2px;
+  background:var(--danger);color:#fff;border:none;border-radius:4px;
+  cursor:pointer;font-family:var(--mono)}
+#rv-stop:hover{filter:brightness(1.15)}
+#rv-arm.armed{border-color:var(--danger);color:var(--danger)}
+/* LAB: the map is irrelevant to offline analysis, so the report takes the space */
+body.mode-lab #map-wrap{display:none}
+body.mode-lab #lab-view{display:flex}
+#lab-view{display:none;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+#lab-out{flex:1;overflow:auto;padding:12px 14px;font-family:var(--mono);font-size:11px;
+  line-height:1.5;white-space:pre;color:var(--text)}
+#lab-out img{max-width:100%;height:auto;display:block;margin:10px 0;border:1px solid var(--line)}
+#lab-tabs{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line);
+  flex-wrap:wrap;align-items:center}
+#lab-tabs .tab{font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:4px 9px;
+  border:1px solid var(--line);border-radius:3px;background:none;color:var(--muted);cursor:pointer}
+#lab-tabs .tab.on{color:var(--accent);border-color:var(--accent)}
+.arg-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.arg-row label{flex:0 0 82px;font-family:var(--mono);font-size:10px;color:var(--muted);
+  letter-spacing:1px;overflow:hidden;text-overflow:ellipsis}
+.arg-row input,.arg-row select{flex:1;min-width:0;background:var(--bg);color:var(--text);
+  border:1px solid var(--line);border-radius:3px;padding:4px 6px;font-family:var(--mono);font-size:11px}
+.arg-row input[type=checkbox]{flex:0 0 auto}
+
+/* value rows */
+.vrow{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);
+  font-size:12px;padding:2px 0}
+.vrow .l{color:var(--muted);font-size:10px;letter-spacing:1px}
+.vrow .v{color:var(--text)}
+.big{font-size:20px;color:var(--accent)}
+.unit{font-size:10px;color:var(--muted);margin-left:3px}
+.ok{color:var(--accent2)} .warnc{color:var(--warn)} .bad{color:var(--danger)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;
+  border:1px solid var(--border);border-radius:10px;padding:2px 9px;color:var(--muted);margin:2px 3px 2px 0}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.pill.p-ok{color:var(--accent2);border-color:rgba(0,255,157,.35)} .pill.p-ok::before{background:var(--accent2)}
+.pill.p-warn{color:var(--warn);border-color:rgba(255,157,0,.4)} .pill.p-warn::before{background:var(--warn)}
+.pill.p-bad{color:var(--danger);border-color:rgba(255,61,90,.4)} .pill.p-bad::before{background:var(--danger)}
+
+/* tables */
+table.tt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px}
+table.tt th{color:var(--muted);font-size:9px;letter-spacing:1px;font-weight:400;text-align:right;padding:2px 4px}
+table.tt td{text-align:right;padding:2px 4px;border-top:1px solid var(--border2)}
+table.tt th:first-child,table.tt td:first-child{text-align:left}
+.cell{display:inline-block;min-width:34px;text-align:center;border-radius:3px;font-size:10px;padding:1px 4px}
+.c-los{background:rgba(0,255,157,.15);color:var(--accent2)}
+.c-soft{background:rgba(255,157,0,.18);color:var(--warn)}
+.c-nlos{background:rgba(255,61,90,.22);color:var(--danger)}
+.c-none{background:rgba(74,96,112,.15);color:var(--muted)}
+
+/* controls */
+.btn{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);
+  font-size:11px;padding:5px 10px;border-radius:3px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.active{background:var(--accent);color:#00232e;border-color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.controls{display:flex;flex-wrap:wrap;gap:6px}
+.tune-row{display:flex;align-items:center;gap:8px;padding:3px 0;font-family:var(--mono);font-size:10px}
+.tune-row label{color:var(--muted);width:86px;flex-shrink:0;letter-spacing:1px}
+.tune-row input[type=range]{flex:1;accent-color:var(--accent)}
+.tune-val{width:44px;text-align:right;color:var(--accent)}
+.ws-row{display:flex;gap:6px;margin-top:8px}
+.ws-input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);
+  font-family:var(--mono);font-size:11px;padding:4px 8px;border-radius:3px}
+.note{font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:8px}
+.bar-track{height:5px;background:var(--bg);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;background:var(--accent);width:0%}
+
+/* calibrate wizard */
+#cal-steps{display:flex;gap:4px;margin-bottom:10px}
+#cal-steps button{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--muted);
+  font-family:var(--mono);font-size:10px;padding:5px 2px;border-radius:3px;cursor:pointer}
+#cal-steps button.on{border-color:var(--accent);color:var(--accent)}
+#cal-steps button.done{color:var(--accent2)}
+.cal-step{display:none}
+.cal-step.on{display:block}
+
+/* vision click-to-place: expanded overlay for precise clicking (the aside
+   is only 340px — far too small to click accurately on a 1920x1080 photo) */
+#vision-workspace.vision-expanded{
+  position:fixed; inset:20px; z-index:200; display:flex; flex-direction:column; gap:10px;
+  background:var(--bg2); border:1px solid var(--border); border-radius:8px;
+  padding:16px; box-shadow:0 8px 40px rgba(0,0,0,.6);
+}
+#vision-expand-backdrop{display:none}
+#vision-workspace.vision-expanded ~ #vision-expand-backdrop{
+  display:block; position:fixed; inset:0; z-index:199; background:rgba(6,9,13,.85);
+}
+#vision-workspace.vision-expanded #vision-frame-wrap{
+  flex:1; min-height:0; display:flex; align-items:center; justify-content:center; margin-top:0;
+}
+#vision-workspace.vision-expanded #vision-img{
+  width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain;
+}
+#vision-workspace.vision-expanded .vrow,
+#vision-workspace.vision-expanded .controls{flex-shrink:0}
+
+/* diagnostics cards */
+.dcard{background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:14px 16px}
+.dcard h3{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:10px}
+.budget{display:flex;height:26px;border-radius:4px;overflow:hidden;font-family:var(--mono);font-size:9px}
+.budget div{display:flex;align-items:center;justify-content:center;color:#04141c;overflow:hidden;white-space:nowrap;min-width:0}
+.spark{width:100%;height:34px;display:block}
+#log{font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.7;max-height:230px;overflow-y:auto}
+#log .t{color:var(--border)}
+aside::-webkit-scrollbar,#diag-view::-webkit-scrollbar,#log::-webkit-scrollbar{width:8px}
+aside::-webkit-scrollbar-thumb,#diag-view::-webkit-scrollbar-thumb,#log::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+</style>
+</head>
+<body class="mode-operate">
+
+<header>
+  <div class="logo">UWB<b>RTLS</b></div>
+  <div class="status-dot" id="dot"></div><span id="status-text">CONNECTING</span>
+  <div id="live-stats">
+    <span class="hstat">CYC <b id="h-cycle">—</b></span>
+    <span class="hstat"><b id="h-rate">—</b> Hz</span>
+    <span class="hstat">FIX/S <b id="h-fps">0</b></span>
+    <span class="hstat">AGE <b id="h-age">—</b> ms</span>
+    <span class="hstat" id="h-rec" title="Session is being recorded server-side"><span id="rec-dot"></span>REC</span>
+  </div>
+  <div id="transport">
+    <button class="tbtn" id="tp-play" onclick="Replay.toggle()">⏵</button>
+    <span id="replay-name"></span>
+    <input type="range" id="scrub" min="0" max="1000" value="0"
+           oninput="Replay.scrub(this.value/1000)">
+    <span id="replay-time">0:00 / 0:00</span>
+    <select class="tbtn" id="tp-speed" onchange="Replay.setSpeed(parseFloat(this.value))">
+      <option value="0.5">0.5×</option><option value="1" selected>1×</option>
+      <option value="2">2×</option><option value="4">4×</option>
+    </select>
+    <button class="tbtn" onclick="Replay.exit()" title="Back to live">✕</button>
+  </div>
+  <button class="tbtn" id="btn-save" onclick="saveSession()" title="Download received stream as .ndjson">⭳</button>
+  <div id="modes">
+    <button id="m-operate" onclick="setMode('operate')">OPERATE</button>
+    <button id="m-tune"    onclick="setMode('tune')">TUNE</button>
+    <button id="m-diag"    onclick="setMode('diag')">DIAG</button>
+    <button id="m-cal"     onclick="setMode('cal')">CAL</button>
+    <button id="m-run"     onclick="setMode('run')">RUN</button>
+    <button id="m-lab"     onclick="setMode('lab')">LAB</button>
+  </div>
+</header>
+
+<div id="map-wrap">
+  <canvas id="canvas"></canvas>
+  <div id="tag-legend" style="display:none"></div>
+  <div id="degraded-banner"></div>
+  <div id="map-tools">
+    <button class="btn" id="btn-trail" onclick="toggleTrail()">TRAIL</button>
+    <button class="btn" id="btn-ranges" onclick="toggleRanges()">RANGES</button>
+    <button class="btn" onclick="clearTrails()">CLEAR</button>
+    <button class="btn" onclick="autoFit()">FIT</button>
+    <button class="btn" id="btn-live-feed" onclick="LiveFeed.toggle()">CAM</button>
+  </div>
+  <div id="live-feed-panel">
+    <div id="live-feed-header">
+      <span>KINECT LIVE</span>
+      <span id="live-feed-status">—</span>
+      <span class="spacer"></span>
+      <button onclick="LiveFeed.toggle()" title="close">✕</button>
+    </div>
+    <div id="live-feed-placeholder">waiting for frame…</div>
+    <img id="live-feed-img" style="display:none">
+  </div>
+</div>
+
+<!-- ── DIAGNOSTICS (replaces map) ─────────────────────────────────────────── -->
+<div id="diag-view">
+  <div class="dcard" style="grid-column:1/-1">
+    <h3>TDMA CYCLE BUDGET</h3>
+    <div class="vrow" style="margin-bottom:6px">
+      <span class="l">CYCLE <b id="dg-cycle" class="v">—</b></span>
+      <span class="l">RATE <b id="dg-rate" class="v">—</b> Hz</span>
+      <span class="l">TOTAL <b id="dg-total" class="v">—</b> ms</span>
+    </div>
+    <div class="budget" id="dg-budget"></div>
+    <div class="vrow" style="margin-top:6px;font-size:10px">
+      <span style="color:var(--accent)">■ master <b id="dg-master">—</b></span>
+      <span style="color:var(--danger)">■ slave <b id="dg-slave">—</b></span>
+      <span style="color:var(--violet)">■ uart <b id="dg-uart">—</b></span>
+      <span style="color:var(--warn)">■ proc <b id="dg-proc">—</b></span>
+      <span style="color:var(--muted)">■ idle <b id="dg-idle">—</b></span>
+    </div>
+  </div>
+  <div class="dcard"><h3>RATE (60 s)</h3><canvas class="spark" id="sp-rate" height="34"></canvas></div>
+  <div class="dcard"><h3>MASTER SWEEP µs</h3><canvas class="spark" id="sp-master" height="34"></canvas></div>
+  <div class="dcard"><h3>SLAVE SWEEP µs</h3><canvas class="spark" id="sp-slave" height="34"></canvas></div>
+  <div class="dcard"><h3>UART WAIT µs</h3><canvas class="spark" id="sp-uart" height="34"></canvas></div>
+  <div class="dcard">
+    <h3>PER-TAG STREAMS</h3>
+    <table class="tt"><thead><tr><th>tag</th><th>role</th><th>fixes</th><th>age ms</th><th>state</th></tr></thead>
+    <tbody id="dg-tags"></tbody></table>
+    <div class="vrow" style="margin-top:8px"><span class="l">CYCLES PAIRED</span><span class="v" id="dg-sync">—</span></div>
+  </div>
+  <div class="dcard">
+    <h3>LINK HEALTH <span style="color:var(--muted);letter-spacing:0">(uart counters: serial-only until LINK,v1 lands)</span></h3>
+    <div id="dg-link" class="note">no link message yet — timing above comes from DIAG,v1</div>
+  </div>
+  <div class="dcard" style="grid-column:1/-1"><h3>EVENT LOG</h3><div id="log"></div></div>
+</div>
+
+<!-- ══ LAB: offline analysis output ═════════════════════════════════════ -->
+<div id="lab-view">
+  <div id="lab-tabs"><span class="note" id="lab-hint">run a tool to see its output here</span></div>
+  <div id="lab-out"></div>
+</div>
+
+<aside>
+  <!-- ══ OPERATE ══════════════════════════════════════════════════════════ -->
+  <div class="panel for-operate">
+    <div class="panel-title">ROBOT</div>
+    <div class="vrow"><span class="l">X</span><span class="v big" id="rb-x">—</span></div>
+    <div class="vrow"><span class="l">Y</span><span class="v big" id="rb-y">—</span></div>
+    <div class="vrow"><span class="l">HEADING</span><span class="v big" id="rb-hdg">—</span></div>
+    <div class="vrow"><span class="l">QUALITY</span><span class="v" id="rb-q">—</span></div>
+    <div class="bar-track" style="margin-top:4px"><div class="bar-fill" id="rb-qbar"></div></div>
+  </div>
+  <div class="panel for-operate">
+    <div class="panel-title">BASELINE</div>
+    <div class="vrow"><span class="l">MEASURED</span><span class="v" id="rb-base">—</span></div>
+    <div class="vrow"><span class="l">NOMINAL</span><span class="v" id="rb-basenom">—</span></div>
+    <div class="vrow"><span class="l">ERROR</span><span class="v" id="rb-baseerr">—</span></div>
+  </div>
+  <div class="panel for-operate">
+    <div class="panel-title">MOTION</div>
+    <div class="vrow"><span class="l">SPEED</span><span class="v" id="rb-speed">—</span></div>
+    <div class="vrow"><span class="l">COURSE</span><span class="v" id="rb-course">—</span></div>
+    <div class="vrow"><span class="l">STATE</span><span class="v" id="rb-motion">—</span></div>
+  </div>
+  <div class="panel for-operate">
+    <div class="panel-title">ORIENTATION (IMU · master)</div>
+    <div class="vrow"><span class="l">ROLL</span><span class="v" id="op-roll">—</span></div>
+    <div class="vrow"><span class="l">PITCH</span><span class="v" id="op-pitch">—</span></div>
+    <div class="vrow"><span class="l">YAW</span><span class="v" id="op-yaw">—</span></div>
+  </div>
+  <div class="panel for-operate">
+    <div class="panel-title">HEALTH</div>
+    <div id="op-health"></div>
+  </div>
+
+  <!-- ══ TUNE ═════════════════════════════════════════════════════════════ -->
+  <div class="panel for-tune">
+    <div class="panel-title">PER-TAG</div>
+    <table class="tt"><thead><tr id="pt-head"><th>&nbsp;</th></tr></thead><tbody id="pt-body"></tbody></table>
+  </div>
+  <div class="panel for-tune">
+    <div class="panel-title">NLOS MATRIX <span class="spacer"></span><span style="color:var(--muted)">col=anchor · row=tag</span></div>
+    <table class="tt"><thead><tr id="nm-head"><th>&nbsp;</th></tr></thead><tbody id="nm-body"></tbody></table>
+    <div class="note" style="margin:6px 0 0">bad column → tag occluded · bad row → anchor/geometry</div>
+  </div>
+  <div class="panel for-tune">
+    <div class="panel-title">ANCHORS</div>
+    <table class="tt"><thead><tr><th>A</th><th>d M</th><th>d S</th><th>Δ</th><th>rx/fp M</th><th>used</th></tr></thead>
+    <tbody id="an-body"></tbody></table>
+  </div>
+  <div class="panel for-tune">
+    <div class="panel-title">EKF (master)</div>
+    <div class="vrow"><span class="l">V</span><span class="v" id="tk-vel">—</span></div>
+    <div class="vrow"><span class="l">NIS</span><span class="v" id="tk-nis">—</span></div>
+    <div class="vrow"><span class="l">BIAS</span><span class="v" id="tk-bias">—</span></div>
+    <div class="vrow"><span class="l">MODE</span><span class="v" id="tk-mode">—</span></div>
+  </div>
+  <div class="panel for-tune">
+    <div class="panel-title">TUNING <span class="spacer"></span><span id="tune-lock" style="color:var(--violet);display:none">REPLAY — read only</span></div>
+    <!-- Estimator choice. fusion_config declared this "live-switchable via GUI"
+         long before anything wired it; the MHE port is what made it real. -->
+    <div class="arg-row" style="margin-bottom:8px">
+      <label>ESTIMATOR</label>
+      <select id="t-estimator" onchange="setEstimator(this.value)">
+        <option value="ekf">EKF</option>
+        <option value="mhe">MHE (cv)</option>
+        <option value="mhe-unicycle">MHE (unicycle)</option>
+      </select>
+    </div>
+    <div class="note" id="tune-echo" style="margin-bottom:8px"></div>
+    <div class="tune-row"><label>FILT N</label><input type="range" min="1" max="16" value="8" step="1" id="t-filtN"><span class="tune-val" id="tv-filtN">8</span></div>
+    <div class="tune-row"><label>EKF Q</label><input type="range" min="0.001" max="0.1" value="0.005" step="0.001" id="t-ekfQ"><span class="tune-val" id="tv-ekfQ">0.005</span></div>
+    <div class="tune-row"><label>EMA α</label><input type="range" min="0.05" max="1.0" value="0.15" step="0.01" id="t-ema"><span class="tune-val" id="tv-ema">0.15</span></div>
+    <div class="tune-row"><label>GATE K</label><input type="range" min="1.5" max="5.0" value="2.5" step="0.1" id="t-gateK"><span class="tune-val" id="tv-gateK">2.5</span></div>
+    <div class="tune-row"><label>BIAS mm</label><input type="range" min="0" max="100" value="40" step="1" id="t-bias"><span class="tune-val" id="tv-bias">40</span></div>
+    <div class="tune-row"><label>σ ACCEL</label><input type="range" min="0.02" max="0.5" value="0.15" step="0.01" id="t-sigma"><span class="tune-val" id="tv-sigma">0.15</span></div>
+    <div class="tune-row"><label>ZUPT THRESH</label><input type="range" min="0.02" max="0.3" value="0.1" step="0.01" id="t-zupt"><span class="tune-val" id="tv-zupt">0.10</span></div>
+    <div class="tune-row"><label>K_NLOS mm/dB</label><input type="range" min="0" max="60" value="0" step="1" id="t-nlos"><span class="tune-val" id="tv-nlos">0</span></div>
+  </div>
+  <div class="panel for-tune">
+    <div class="panel-title">SESSION</div>
+    <div class="vrow"><span class="l">BODY BBOX X</span><span class="v" id="ss-x">—</span></div>
+    <div class="vrow"><span class="l">BODY BBOX Y</span><span class="v" id="ss-y">—</span></div>
+    <div class="controls" style="margin-top:8px">
+      <button class="btn" onclick="exportCSV()">EXPORT CSV</button>
+      <button class="btn" onclick="setMode('cal')">OPEN CALIBRATE</button>
+    </div>
+  </div>
+
+  <!-- ══ CALIBRATE ════════════════════════════════════════════════════════ -->
+  <div class="panel for-cal">
+    <div class="panel-title">CALIBRATION</div>
+    <div id="cal-steps">
+      <button id="cs-1" class="on" onclick="calStep(1)">①ANCH</button>
+      <button id="cs-2" onclick="calStep(2)">②DELAY</button>
+      <button id="cs-3" onclick="calStep(3)">③BASE</button>
+      <button id="cs-4" onclick="calStep(4)">④POWER</button>
+      <button id="cs-5" onclick="calStep(5)">⑤OK?</button>
+      <button id="cs-6" onclick="calStep(6)">⑥VISION</button>
+      <button id="cs-7" onclick="calStep(7)">⑦REG</button>
+      <button id="cs-8" onclick="calStep(8)">⑧TAG</button>
+    </div>
+
+    <!-- ① anchor survey -->
+    <div class="cal-step on" id="cal-1">
+      <div class="note">Anchor self-survey: click a grid point on the map, place the RIG there, Capture. ≥4 points → Compute writes anchors.json.</div>
+      <div class="vrow"><span class="l">SELECTED</span><span class="v" id="survey-selected">click map</span></div>
+      <div class="vrow"><span class="l">CAPTURED</span><span class="v"><span id="survey-n-captured">0</span> / 9 (≥4)</span></div>
+      <div id="survey-progress" style="display:none">
+        <div class="vrow"><span class="l">CAPTURE</span><span class="v" id="survey-cap-count">0 / 50</span></div>
+        <div class="bar-track"><div class="bar-fill" id="survey-bar"></div></div>
+      </div>
+      <div id="survey-captures" class="note"></div>
+      <div class="controls" style="margin-top:8px">
+        <button class="btn" id="btn-capture" onclick="surveyCapture()" disabled>CAPTURE</button>
+        <button class="btn" id="btn-compute" onclick="surveyCompute()" disabled>COMPUTE</button>
+        <button class="btn" onclick="surveyClear()">CLEAR</button>
+      </div>
+      <div id="survey-result-box" style="display:none;margin-top:8px" class="note">
+        <div id="survey-result-anchors"></div>
+        RMS: <span id="survey-rms" class="ok"></span>
+      </div>
+    </div>
+
+    <!-- ② antenna delay -->
+    <div class="cal-step" id="cal-2">
+      <div class="note">Tier-1 HW antenna delay: binary-searches each ANCHOR's delay against the <b>master</b> tag at a known distance. Place the rig at a KNOWN point and enter its coordinates — each anchor's true distance is computed from the layout geometry (anchors are rarely equidistant from the tag, so one shared distance was itself a source of bad calibration).
+      The slave board's own delay is a firmware constant — step ③ verifies both jointly.</div>
+      <div class="vrow"><span class="l">TAG X</span>
+        <input type="number" id="hwcalib-tag-x" step="0.01"
+          style="font-family:var(--mono);font-size:12px;width:90px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px"></div>
+      <div class="vrow"><span class="l">TAG Y</span>
+        <input type="number" id="hwcalib-tag-y" step="0.01"
+          style="font-family:var(--mono);font-size:12px;width:90px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px"></div>
+      <div class="note" style="margin:2px 0 6px">defaults to the anchor-layout centroid — overwrite with the rig's actual measured position</div>
+      <label style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:6px">
+        <input type="checkbox" id="hwcalib-single-toggle" onchange="toggleHwCalibSingle()">
+        use one shared distance instead (equidistant layouts only)
+      </label>
+      <div class="vrow" id="hwcalib-single-row" style="display:none"><span class="l">TRUE DIST mm</span>
+        <input type="number" id="hwcalib-dist" value="2828" min="100" max="30000"
+          style="font-family:var(--mono);font-size:12px;width:90px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px"></div>
+      <div id="hwcalib-rows" style="margin:8px 0"></div>
+      <div id="hwcalib-summary" class="note ok" style="display:none"></div>
+      <div class="controls"><button class="btn" id="btn-hwcalib" onclick="startHwCalib()">CALIBRATE ALL ANCHORS</button></div>
+    </div>
+
+    <!-- ③ baseline verification -->
+    <div class="cal-step" id="cal-3">
+      <div class="note">Dual-tag joint check: keep the rig <b>static</b>, collect paired cycles, compare measured baseline to nominal. This validates both tags' delays together.</div>
+      <div class="vrow"><span class="l">NOMINAL</span><span class="v" id="bv-nom">—</span></div>
+      <div class="vrow"><span class="l">SAMPLES</span><span class="v" id="bv-n">0 / 200</span></div>
+      <div class="bar-track"><div class="bar-fill" id="bv-bar"></div></div>
+      <div class="vrow" style="margin-top:6px"><span class="l">MEAN</span><span class="v" id="bv-mean">—</span></div>
+      <div class="vrow"><span class="l">ERROR</span><span class="v" id="bv-err">—</span></div>
+      <div class="vrow"><span class="l">σ</span><span class="v" id="bv-std">—</span></div>
+      <div class="vrow"><span class="l">VERDICT</span><span class="v" id="bv-verdict">—</span></div>
+      <div class="controls" style="margin-top:8px">
+        <button class="btn" id="btn-bv" onclick="bvStart()">START (200 cycles)</button>
+        <button class="btn" onclick="bvReset()">RESET</button>
+      </div>
+    </div>
+
+    <!-- ④ error map -->
+    <div class="cal-step" id="cal-4">
+      <div class="note">
+        <b>Tier-2 range correction.</b> The spatial error map is retired: the
+        per-anchor power model in <code>range_correction.json</code> replaced it
+        and is applied inside the solve, so there is nothing to capture here.
+        Fit it from a static capture with the LAB tools.
+      </div>
+    </div>
+<div class="cal-step" id="cal-5">
+      <div class="note">Quality gates — all green = calibrated system.</div>
+      <div id="cal-summary"></div>
+    </div>
+
+    <!-- ⑥ overhead Kinect click-to-place -->
+    <div class="cal-step" id="cal-6">
+      <div class="note">Overhead Kinect click-to-place: Grab a frame, click the anchor's (or tag's) pixel location below, pick a target, Assign. Assumes a straight-down mount; the click is back-projected onto a horizontal plane at Z (0 m = floor).</div>
+      <div class="controls">
+        <button class="btn" onclick="Vision.grab()">GRAB FRAME</button>
+        <button class="btn" onclick="Vision.detect()">AUTO-DETECT TAGS</button>
+      </div>
+      <div id="vision-workspace">
+        <div id="vision-frame-wrap" style="position:relative;margin-top:8px;display:none">
+          <img id="vision-img" style="width:100%;display:block;border-radius:3px;cursor:crosshair">
+          <div id="vision-marker" style="position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;
+            border:2px solid var(--accent2);border-radius:50%;display:none;pointer-events:none"></div>
+          <button class="btn" id="btn-vision-expand" onclick="Vision.toggleExpand()"
+            style="position:absolute;top:6px;right:6px;padding:3px 8px;font-size:14px;line-height:1;opacity:.85">⤢</button>
+        </div>
+        <div class="vrow"><span class="l">TARGET</span>
+          <select id="vision-target" style="font-family:var(--mono);font-size:11px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px">
+            <option value="tag">tag initial position</option>
+            <option value="new">new anchor…</option>
+          </select>
+        </div>
+        <div class="vrow"><span class="l">Z (height) m</span>
+          <input type="number" id="vision-z" value="0" step="0.01"
+            style="font-family:var(--mono);font-size:12px;width:90px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px"></div>
+        <div class="vrow"><span class="l">PICKED (u,v)</span><span class="v" id="vision-uv">—</span></div>
+        <div class="vrow"><span class="l">WORLD (x,y,z)</span><span class="v" id="vision-xyz">—</span></div>
+        <div class="vrow"><span class="l">MODE</span><span class="v" id="vision-mode">—</span></div>
+        <div class="controls" style="margin-top:8px">
+          <button class="btn" id="btn-vision-assign" onclick="Vision.assign()" disabled>ASSIGN</button>
+        </div>
+      </div>
+      <div id="vision-expand-backdrop" onclick="Vision.toggleExpand()"></div>
+      <div id="vision-error" class="note" style="display:none;color:var(--danger)"></div>
+
+      <!-- auto-detect review: nothing is written to anchors.json until CONFIRM -->
+      <div id="vision-detect-review" style="display:none;margin-top:10px;border-top:1px solid var(--border2);padding-top:8px">
+        <div class="note">Review before writing — nothing in anchors.json changes until you hit CONFIRM.</div>
+        <div id="vision-detect-rows" style="margin:6px 0"></div>
+        <div id="vision-detect-missing" class="note" style="display:none"></div>
+        <div id="vision-detect-rejected" class="note" style="display:none;color:var(--warn)"></div>
+        <div id="vision-detect-warn" class="note" style="display:none;color:var(--danger)"></div>
+        <div id="vision-detect-tags" class="note" style="display:none"></div>
+        <div class="controls" style="margin-top:8px">
+          <button class="btn" onclick="Vision.detectConfirm()">CONFIRM &amp; WRITE</button>
+          <button class="btn" onclick="Vision.detectCancel()">CANCEL</button>
+        </div>
+      </div>
+      <div id="vision-detect-status" class="note ok" style="display:none"></div>
+    </div>
+
+    <!-- ⑦ click-based world registration (one-time, fixes camera tilt) -->
+    <div class="cal-step" id="cal-7">
+      <div class="note"><b>Step 0 — import intrinsics.</b> Loads
+        vision/calibration_data/camera_calibration.mat (colleague's MATLAB calibration:
+        fx=fy=1050, height≈3.873 m) into kinect_vision.json, replacing this project's own
+        checkerboard-derived numbers. One-off — re-run only if that .mat file changes.</div>
+      <div class="controls"><button class="btn" onclick="Registration.importCamcal()">IMPORT CAMERA_CALIBRATION.MAT</button></div>
+      <div id="camcal-result" class="note" style="display:none"></div>
+      <div id="camcal-error" class="note" style="display:none;color:var(--danger)"></div>
+
+      <div class="note" style="margin-top:12px;border-top:1px solid var(--border2);padding-top:8px">
+        <b>Step 1 — world registration.</b> Click each anchor's antenna in ID order
+        (same order as anchors.json). Solves the camera's tilt + position against the
+        anchor coordinates, replacing ⑥VISION's flat-plane assumption with a proper 3D
+        transform. <b>Prerequisite: ①ANCH must be freshly re-run BEFORE this step</b> —
+        registering against stale/vision-derived anchor coordinates just re-encodes
+        their error instead of fixing it.</div>
+      <div class="vrow"><span class="l">ANCHOR Z (m)</span>
+        <input type="number" id="reg-anchor-z" value="0.30" step="0.01"
+          style="font-family:var(--mono);font-size:12px;width:90px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px"></div>
+      <div class="controls"><button class="btn" onclick="Registration.start()">START</button></div>
+
+      <div id="reg-warnings" class="note" style="display:none;color:var(--warn)"></div>
+
+      <div id="reg-workspace" style="display:none;margin-top:8px">
+        <div style="position:relative">
+          <img id="reg-img" style="width:100%;display:block;border-radius:3px;cursor:crosshair">
+          <div id="reg-marker" style="position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;
+            border:2px solid var(--accent2);border-radius:50%;display:none;pointer-events:none"></div>
+        </div>
+        <div class="vrow"><span class="l">CLICKING</span><span class="v" id="reg-progress">—</span></div>
+      </div>
+
+      <div id="reg-result" style="display:none;margin-top:8px">
+        <div class="vrow"><span class="l">RMSE</span><span class="v" id="reg-rmse">—</span></div>
+        <div class="vrow"><span class="l">IMPLIED HEIGHT</span><span class="v" id="reg-height">—</span></div>
+        <div class="vrow"><span class="l">IMPLIED TILT</span><span class="v" id="reg-tilt">—</span></div>
+        <div id="reg-residual-table" class="note"></div>
+        <div id="reg-gate-status" class="note"></div>
+        <div class="controls" style="margin-top:8px">
+          <button class="btn" id="btn-reg-confirm" onclick="Registration.confirm(false)">CONFIRM &amp; SAVE</button>
+          <button class="btn" id="btn-reg-override" onclick="Registration.confirm(true)" style="display:none">OVERRIDE &amp; SAVE ANYWAY</button>
+          <button class="btn" onclick="Registration.cancel()">CANCEL</button>
+        </div>
+      </div>
+      <div id="reg-status" class="note ok" style="display:none"></div>
+      <div id="reg-error" class="note" style="display:none;color:var(--danger)"></div>
+    </div>
+
+    <!-- ⑧ tag-link tools: generated from the CAL jobs the host advertises -->
+    <div class="cal-step" id="cal-8">
+      <div class="note" style="margin-bottom:8px">
+        Commands sent over the tag link. Positioning keeps running throughout —
+        only the reply lines are diverted. Anything that writes hardware is a
+        <b>dry run</b> unless you tick <code>apply</code>.
+      </div>
+      <div class="arg-row">
+        <label>TOOL</label>
+        <select id="cal-kind" onchange="CalTools.select(this.value)"></select>
+      </div>
+      <div id="cal-args"></div>
+      <button class="btn" style="margin-top:8px" onclick="CalTools.run()">RUN</button>
+      <div class="note" style="margin-top:6px">progress appears in the JOBS panel</div>
+    </div>
+  </div>
+
+  <!-- ══ LAB: tool runner ═════════════════════════════════════════════════ -->
+  <!-- Deliberately generic: the host advertises what it can run and the form is
+       generated from each tool's args_schema, so a new tool costs zero markup. -->
+  <div class="panel for-lab">
+    <div class="panel-title">TOOL</div>
+    <div class="arg-row">
+      <label>TOOL</label>
+      <select id="lab-kind" onchange="Lab.selectKind(this.value)"></select>
+    </div>
+    <div id="lab-args"></div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <button class="btn" id="lab-run" onclick="Lab.run()">RUN</button>
+      <button class="btn" onclick="Lab.refresh()">REFRESH FILES</button>
+    </div>
+    <div class="note" id="lab-status" style="margin-top:6px">&nbsp;</div>
+  </div>
+
+  <!-- ══ RUN: rover ══════════════════════════════════════════════════════ -->
+  <!-- Deliberately small. The browser can arm, nudge and stop; it cannot stream
+       continuous velocity — a backgrounded tab stops polling the gamepad while
+       the rover is moving, with no error anywhere. Continuous teleop is a
+       server-side pad thread (Phase 6). -->
+  <div class="panel for-run">
+    <div class="panel-title">ROVER <span class="spacer"></span>
+      <span class="note" id="rv-conn">disconnected</span></div>
+
+    <button class="btn" id="rv-stop" onclick="Rover.stop()">STOP</button>
+    <div class="note" style="margin:6px 0 10px">
+      Not an emergency stop: a software stop over a 115200 link at ~10 Hz is not
+      safety-rated, and the firmware has no watchdog. The only true E-stop is the
+      inline power switch.
+    </div>
+
+    <div class="arg-row">
+      <label>PORT</label><input id="rv-port" value="/dev/ttyACM0">
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="btn" onclick="Rover.connect()">CONNECT</button>
+      <button class="btn" onclick="Rover.disconnect()">DISCONNECT</button>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="btn" id="rv-arm" onmousedown="Rover.armHold(true)"
+              onmouseup="Rover.armHold(false)" onmouseleave="Rover.armHold(false)"
+              >HOLD 2s TO ARM</button>
+      <button class="btn" onclick="Rover.disarm()">DISARM</button>
+    </div>
+
+    <div class="note" style="margin-bottom:8px">
+      Nudges expire in the host, so a dropped connection still stops on time.
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="btn" onclick="Rover.nudge(0.05,0)">FWD</button>
+      <button class="btn" onclick="Rover.nudge(-0.05,0)">REV</button>
+      <button class="btn" onclick="Rover.nudge(0,0.08)">LEFT</button>
+      <button class="btn" onclick="Rover.nudge(0,-0.08)">RIGHT</button>
+    </div>
+
+    <div class="vrow"><span class="l">ARMED</span><span class="v" id="rv-armed">—</span></div>
+    <div class="vrow"><span class="l">MODE</span><span class="v" id="rv-mode">—</span></div>
+    <div class="vrow"><span class="l">V / ω</span><span class="v" id="rv-vel">—</span></div>
+    <div class="vrow"><span class="l">LEASE</span><span class="v" id="rv-lease">—</span></div>
+    <div class="vrow"><span class="l">PITCH/ROLL</span><span class="v" id="rv-att">—</span></div>
+    <div class="vrow"><span class="l">FAULT</span><span class="v" id="rv-fault">—</span></div>
+    <div class="vrow"><span class="l">PAD</span><span class="v" id="rv-pad">—</span></div>
+
+    <div class="panel-title" style="margin-top:12px">RUN CAPTURE</div>
+    <div class="note" style="margin-bottom:8px">
+      UWB sweeps and drive commands are recorded on one host clock. Stopping
+      writes the .mat and scores it automatically — the report appears in JOBS.
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="btn" onclick="Capture.start()">START RUN</button>
+      <button class="btn" onclick="Capture.stop()">STOP + REPORT</button>
+    </div>
+    <div class="vrow" style="margin-top:6px">
+      <span class="l">RECORDING</span><span class="v" id="cap-state">—</span></div>
+    <div class="vrow"><span class="l">SWEEPS</span><span class="v" id="cap-n">—</span></div>
+    <div class="note" id="rv-note" style="margin-top:6px">&nbsp;</div>
+  </div>
+
+  <!-- ══ shared: jobs ═════════════════════════════════════════════════════ -->
+  <!-- Long host operations (replay, reports, calibration sweeps). Always
+       visible: a job started from CAL should still be watchable from OPERATE. -->
+  <div class="panel">
+    <div class="panel-title">JOBS <span class="note" id="jobs-idle">· idle</span></div>
+    <div id="jobs-list"></div>
+    <div class="note" id="jobs-hint" style="margin-top:6px">no jobs run yet</div>
+  </div>
+
+  <!-- ══ shared: connection ═══════════════════════════════════════════════ -->
+  <div class="panel">
+    <div class="panel-title">CONNECTION</div>
+    <div class="ws-row">
+      <input class="ws-input" id="ws-url" value="ws://localhost:8765">
+      <button class="btn" onclick="DataManager.connect()">CONNECT</button>
+    </div>
+    <div class="note" style="margin-top:6px">drop a session .ndjson anywhere to replay</div>
+  </div>
+</aside>
+
+<div id="drop-overlay">DROP SESSION LOG TO REPLAY</div>
+
+<script>
+'use strict';
+/* ═════════════════════════════════════════════════════════════════════════
+   STORE — single source of truth. The DataManager mutates it via dispatch();
+   renderers only read it. No widget ever sees "the last packet".
+   ═════════════════════════════════════════════════════════════════════════ */
+const TRAIL_MAX = 400, ROBOT_TRAIL_MAX = 600;
+const store = {
+  data:   {mode:'live', connected:false},
+  config: {anchors:[], bounds:null, dim:2, baseline_nominal_m:0.5, tags:[],
+           tag_palette:['#00d4ff','#e63946','#a3e635','#a78bfa','#ff9d00','#ff3d5a'],
+           error_map:{loaded:false}},
+  robot:  null,               // latest 'robot' msg
+  robotTrail: [],
+  tags:   new Map(),          // tag_id -> {fix, trail:[], color, lastTs, firstTs}
+  system: {cycle:null, diag:null, diagHist:[], rateHist:[], link:null,
+           robotN:0, robotPaired:0},
+  ui:     {mode:'operate', showTrail:true, showRanges:false, calStep:1},
+};
+let history = [];             // rows for CSV export
+let rxBuffer = [];            // every received msg (client-side session capture)
+let fixCount = 0, fixRate = 0;
+
+function resetStore(){
+  store.robot = null; store.robotTrail = [];
+  store.tags = new Map();
+  store.system = {cycle:null, diag:null, diagHist:[], rateHist:[], link:null, robotN:0, robotPaired:0};
+  history = [];
+}
+function masterId(){
+  if (store.config.tags.length) { const m = store.config.tags.find(t=>t.role==='master'); if (m) return m.id; }
+  const ids = [...store.tags.keys()]; return ids.length ? Math.min(...ids) : null;
+}
+function slaveId(){
+  if (store.config.tags.length) { const s = store.config.tags.find(t=>t.role==='slave'); if (s) return s.id; }
+  const ids = [...store.tags.keys()].sort((a,b)=>a-b); return ids.length>1 ? ids[1] : null;
+}
+function tagOf(id){ return id!=null ? store.tags.get(id) : null; }
+function hex(id){ return id==null ? '—' : '0x'+id.toString(16).toUpperCase().padStart(2,'0'); }
+function nowTs(){ return store.data.mode==='replay' ? Replay.clock : Date.now()/1000; }
+
+/* ═════════════════════════════════════════════════════════════════════════
+   DISPATCH — one typed-message handler for BOTH live and replay.
+   ═════════════════════════════════════════════════════════════════════════ */
+function dispatch(d){
+  try{
+    const t = d.type;
+    if (t === 'config')  return onConfig(d);
+    if (t === 'robot')   return onRobot(d);
+    if (t === 'diag')    return onDiag(d);
+    if (t === 'link')    { store.system.link = d; return; }
+    if (t === 'tag_fix' || t === undefined) return onTagFix(d);  // undefined = legacy backend
+    if (t && t.startsWith('job_'))      return Jobs.on(d);
+    if (t && t.startsWith('fs_'))       return Lab.on(d);
+    if (t && t.startsWith('rover_'))    return Rover.on(d);
+    if (t && t.startsWith('capture_'))  return Capture.on(d);
+    if (t === 'error')                  return Jobs.onError(d);
+    if (t === 'tune_state')             return onTuneState(d);
+    if (t && t.startsWith('survey_'))   return Survey.on(d);
+    if (t && t.startsWith('HWCALIB'))   return HwCal.on(d);
+    if (t && (t.startsWith('vision_register_') || t.startsWith('vision_camcal_'))) return Registration.on(d);
+    if (t === 'vision_frame_live') return LiveFeed.on(d);
+    if (t && t.startsWith('vision_'))   return Vision.on(d);
+  }catch(e){ /* dispatch must never throw: partial logs / dropped cycles are normal */ }
+}
+
+function setEstimator(v){
+  // The MHE is a sliding-window smoother; switching costs one window of
+  // warm-up during which the host falls back to the raw fix rather than
+  // blanking the display.
+  DataManager.send(v === 'ekf'
+    ? {type:'tune', estimator:'ekf'}
+    : {type:'tune', estimator:'mhe',
+       mheModel: v === 'mhe-unicycle' ? 'unicycle' : 'cv'});
+}
+
+function onTuneState(d){
+  // The server's actual parameter values. Tuning used to be fire-and-forget:
+  // a slider could disagree with the host indefinitely with nothing showing it.
+  store.system.tuneState = d.params || {};
+  const el = document.getElementById('tune-echo');
+  if (el) el.textContent = Object.entries(store.system.tuneState)
+      .filter(function(kv){ return kv[1] !== null && kv[1] !== undefined; })
+      .map(function(kv){ return kv[0]+'='+kv[1]; }).join('  ');
+}
+
+function onConfig(d){
+  const c = store.config;
+  if (d.anchors) c.anchors = d.anchors.map(a=>({id:a.id, x:a.x, y:a.y}));
+  if (d.tag_palette && d.tag_palette.length) c.tag_palette = d.tag_palette;
+  if (d.baseline_nominal_m != null) c.baseline_nominal_m = d.baseline_nominal_m;
+  if (d.tags) c.tags = d.tags;
+  if (d.bounds) c.bounds = d.bounds;
+  hwcalibDefaultTagXY();
+  Vision.buildTargetOptions();
+  buildStatic(); autoFit();
+  logMsg('config: '+c.anchors.length+' anchors, baseline '+c.baseline_nominal_m+' m');
+}
+
+function onTagFix(d){
+  if (d.tag_id == null || d.ex == null) return;
+  fixCount++;
+  let tg = store.tags.get(d.tag_id);
+  if (!tg){
+    tg = {fix:null, trail:[], color:store.config.tag_palette[store.tags.size % store.config.tag_palette.length],
+          lastTs:0, nFix:0};
+    store.tags.set(d.tag_id, tg);
+    buildStatic();
+    logMsg('tag discovered: '+hex(d.tag_id));
+  }
+  tg.fix = d; tg.lastTs = nowTs(); tg.nFix++;
+  if (store.ui.showTrail){
+    tg.trail.push({x:d.ex, y:d.ey});
+    if (tg.trail.length > TRAIL_MAX) tg.trail.shift();
+  }
+  if (d.cycle != null) store.system.cycle = d.cycle;
+  history.push({t:new Date(nowTs()*1000).toISOString(), ...flatten(d)});
+  if (history.length > 20000) history.shift();
+  Survey.onFix(d); BaseVer.onFix(d);
+}
+
+function onRobot(d){
+  store.robot = d; d._rxTs = nowTs();
+  store.system.robotN++;
+  if (d.both_present) store.system.robotPaired++;
+  if (d.cycle != null) store.system.cycle = d.cycle;
+  store.robotTrail.push({x:d.cx, y:d.cy});
+  if (store.robotTrail.length > ROBOT_TRAIL_MAX) store.robotTrail.shift();
+  history.push({t:new Date(nowTs()*1000).toISOString(), type:'robot', ...flatten(d)});
+  BaseVer.onRobot(d);
+}
+
+function onDiag(d){
+  const s = store.system;
+  s.diag = d; s.cycle = d.cycle;
+  s.diagHist.push(d); if (s.diagHist.length > 240) s.diagHist.shift();
+  if (d.rate_hz) { s.rateHist.push(d.rate_hz); if (s.rateHist.length > 240) s.rateHist.shift(); }
+}
+
+function flatten(d){
+  const o = {};
+  for (const [k,v] of Object.entries(d)){
+    if (v === null || typeof v !== 'object') o[k] = v;
+    else if (Array.isArray(v) && v.every(x=>typeof x==='number')) o[k] = v.join('|');
+    else if (k === 'imu' && v) { for (const [ik,iv] of Object.entries(v)) o['imu_'+ik] = iv; }
+  }
+  return o;
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   DATA MANAGER — one feeder, two paths (LIVE websocket / REPLAY log file),
+   both funnel through dispatch(). Renderers can't tell which is active.
+   ═════════════════════════════════════════════════════════════════════════ */
+const DataManager = {
+  ws:null, _retry:null,
+  connect(){
+    const url = document.getElementById('ws-url').value;
+    if (this.ws){ this.ws.onclose = null; this.ws.close(); }
+    clearTimeout(this._retry);
+    logMsg('connecting '+url+' …');
+    const ws = this.ws = new WebSocket(url);
+    ws.onopen = ()=>{ store.data.connected = true; logMsg('connected'); };
+    ws.onmessage = e=>{
+      if (store.data.mode !== 'live') return;         // ignore live while replaying
+      let d; try{ d = JSON.parse(e.data); }catch(_){ return; }
+      rxBuffer.push(e.data);
+      if (rxBuffer.length > 200000) rxBuffer.shift();
+      dispatch(d);
+    };
+    ws.onclose = ()=>{ store.data.connected = false;
+      if (store.data.mode==='live'){ logMsg('disconnected — retry 3 s');
+        this._retry = setTimeout(()=>this.connect(), 3000); } };
+    ws.onerror = ()=>{};
+  },
+  send(obj){
+    if (store.data.mode !== 'live'){ logMsg('replay: command ignored'); return false; }
+    if (this.ws && this.ws.readyState === 1){ this.ws.send(JSON.stringify(obj)); return true; }
+    logMsg('not connected'); return false;
+  },
+};
+
+const Replay = {
+  msgs:[], t0:0, t1:0, clock:0, idx:0, playing:false, speed:1, _raf:null, name:'',
+  load(name, text){
+    const msgs = [];
+    for (const line of text.split('\n')){
+      const s = line.trim(); if (!s) continue;
+      try{ const o = JSON.parse(s); if (o._ts != null) msgs.push(o); }catch(_){/* truncated tail ok */}
+    }
+    if (!msgs.length){ logMsg('replay: no valid messages in file'); return; }
+    msgs.sort((a,b)=>a._ts-b._ts);
+    this.msgs = msgs; this.name = name;
+    this.t0 = msgs[0]._ts; this.t1 = msgs[msgs.length-1]._ts;
+    store.data.mode = 'replay';
+    document.body.classList.add('replay');
+    document.getElementById('replay-name').textContent = name;
+    setMode(store.ui.mode);            // refresh mode gating (CAL disabled)
+    this.seek(0); this.play();
+    logMsg('replay: '+msgs.length+' messages, '+this.fmt(this.t1-this.t0));
+  },
+  seek(frac){
+    resetStore();
+    this.clock = this.t0 + frac*(this.t1-this.t0);
+    this.idx = 0;
+    while (this.idx < this.msgs.length && this.msgs[this.idx]._ts <= this.clock)
+      dispatch(this.msgs[this.idx++]);
+    this.ui();
+  },
+  scrub(frac){ const was = this.playing; this.pause(); this.seek(frac); if (was) this.play(); },
+  play(){
+    if (this.playing) return; this.playing = true;
+    document.getElementById('tp-play').textContent = '⏸';
+    let last = performance.now();
+    const step = (now)=>{
+      if (!this.playing) return;
+      this.clock += (now-last)/1000*this.speed; last = now;
+      while (this.idx < this.msgs.length && this.msgs[this.idx]._ts <= this.clock)
+        dispatch(this.msgs[this.idx++]);
+      if (this.idx >= this.msgs.length){ this.pause(); this.clock = this.t1; }
+      this.ui();
+      this._raf = requestAnimationFrame(step);
+    };
+    this._raf = requestAnimationFrame(step);
+  },
+  pause(){ this.playing = false; cancelAnimationFrame(this._raf);
+    document.getElementById('tp-play').textContent = '⏵'; },
+  toggle(){ this.playing ? this.pause() : (this.idx>=this.msgs.length && this.seek(0), this.play()); },
+  setSpeed(s){ this.speed = s; },
+  exit(){
+    this.pause(); this.msgs = [];
+    store.data.mode = 'live';
+    document.body.classList.remove('replay');
+    resetStore(); setMode(store.ui.mode);
+    DataManager.connect();
+    logMsg('back to live');
+  },
+  ui(){
+    const dur = this.t1-this.t0 || 1;
+    document.getElementById('scrub').value = Math.round((this.clock-this.t0)/dur*1000);
+    document.getElementById('replay-time').textContent = this.fmt(this.clock-this.t0)+' / '+this.fmt(dur);
+  },
+  fmt(s){ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); },
+};
+
+/* drag-drop + save */
+const drop = document.getElementById('drop-overlay');
+window.addEventListener('dragover', e=>{ e.preventDefault(); drop.style.display='flex'; });
+drop.addEventListener('dragleave', ()=>drop.style.display='none');
+window.addEventListener('drop', e=>{
+  e.preventDefault(); drop.style.display='none';
+  const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (!f) return;
+  f.text().then(txt=>Replay.load(f.name, txt));
+});
+function saveSession(){
+  const blob = new Blob([rxBuffer.map(s=>{
+    try{ const o=JSON.parse(s); o._ts = o._ts ?? Date.now()/1000; return JSON.stringify(o); }
+    catch(_){ return null; } }).filter(Boolean).join('\n')+'\n'], {type:'application/x-ndjson'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'session_client_'+new Date().toISOString().replace(/[:.]/g,'-')+'.ndjson';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   MODES
+   ═════════════════════════════════════════════════════════════════════════ */
+function setMode(m){
+  if ((m === 'cal' || m === 'run') && store.data.mode === 'replay') m = store.ui.mode !== 'cal' ? store.ui.mode : 'operate';
+  store.ui.mode = m;
+  localStorage.setItem('rtls_mode', m);
+  document.body.className = 'mode-'+m + (store.data.mode==='replay' ? ' replay' : '');
+  for (const k of ['operate','tune','diag','cal','lab','run']){
+    const b = document.getElementById('m-'+k);
+    b.classList.toggle('on', k===m);
+    b.disabled = (k==='cal' && store.data.mode==='replay');
+  }
+  document.getElementById('tune-lock').style.display = store.data.mode==='replay' ? 'inline' : 'none';
+  resize();
+}
+function calStep(n){
+  store.ui.calStep = n;
+  for (let i=1;i<=8;i++){
+    // Guarded: this dereferenced every panel unconditionally, so one missing
+    // panel threw on null and took the whole step switcher down with it.
+    const pane = document.getElementById('cal-'+i);
+    const btn  = document.getElementById('cs-'+i);
+    if (pane) pane.classList.toggle('on', i===n);
+    if (btn)  btn.classList.toggle('on', i===n);
+  }
+  if (n===5) renderCalSummary();
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   MAP RENDERER — robot body is the hero; tags are markers on the body.
+   ═════════════════════════════════════════════════════════════════════════ */
+const wrap = document.getElementById('map-wrap');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let view = {scale:80, ox:0, oy:0};
+const ROBOT_W = 0.30;   // body depth across the baseline, metres (footprint sketch)
+const GRID = [[-1.5,1.5],[0,1.5],[1.5,1.5],[-1.5,0],[0,0],[1.5,0],[-1.5,-1.5],[0,-1.5],[1.5,-1.5]];
+
+const wx = x => view.ox + x*view.scale;
+const wy = y => view.oy - y*view.scale;
+const sx = px => (px - view.ox)/view.scale;
+const sy = py => (view.oy - py)/view.scale;
+
+function resize(){ canvas.width = wrap.clientWidth||1; canvas.height = wrap.clientHeight||1; }
+function autoFit(){
+  const A = store.config.anchors; if (!A.length) return;
+  const xs = A.map(a=>a.x), ys = A.map(a=>a.y);
+  const minx = Math.min(...xs)-1, maxx = Math.max(...xs)+1;
+  const miny = Math.min(...ys)-1, maxy = Math.max(...ys)+1;
+  view.scale = Math.min(canvas.width/(maxx-minx), canvas.height/(maxy-miny));
+  view.ox = canvas.width/2 - (minx+maxx)/2*view.scale;
+  view.oy = canvas.height/2 + (miny+maxy)/2*view.scale;
+}
+window.addEventListener('resize', ()=>{ resize(); autoFit(); });
+
+let dragging=false, dragStart=null, viewAt=null;
+canvas.addEventListener('mousedown', e=>{ dragging=true; dragStart=[e.clientX,e.clientY]; viewAt={...view}; });
+window.addEventListener('mousemove', e=>{ if(!dragging) return;
+  view.ox = viewAt.ox + e.clientX-dragStart[0]; view.oy = viewAt.oy + e.clientY-dragStart[1]; });
+window.addEventListener('mouseup', ()=>dragging=false);
+canvas.addEventListener('wheel', e=>{ e.preventDefault();
+  const f = e.deltaY<0 ? 1.12 : 1/1.12;
+  const mx=e.offsetX, my=e.offsetY;
+  view.ox = mx - (mx-view.ox)*f; view.oy = my - (my-view.oy)*f; view.scale*=f; }, {passive:false});
+canvas.addEventListener('click', e=>{
+  if (store.ui.mode !== 'cal') return;
+  const cxm = sx(e.offsetX), cym = sy(e.offsetY);
+  let best=-1, bd=0.35;
+  GRID.forEach((p,i)=>{ const d=Math.hypot(p[0]-cxm,p[1]-cym); if(d<bd){bd=d;best=i;} });
+  if (best>=0) Survey.select(best);
+});
+
+function tagStale(tg){ return nowTs() - tg.lastTs > 2.0; }
+
+function draw(){
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const A = store.config.anchors;
+  const mode = store.ui.mode;
+
+  // anchor polygon
+  if (A.length>=3){
+    ctx.beginPath(); ctx.moveTo(wx(A[0].x),wy(A[0].y));
+    for (let i=1;i<A.length;i++) ctx.lineTo(wx(A[i].x),wy(A[i].y));
+    ctx.closePath(); ctx.strokeStyle='rgba(255,157,0,0.16)'; ctx.setLineDash([3,5]); ctx.stroke(); ctx.setLineDash([]);
+  }
+  // per-tag range rings (toggle)
+  if (store.ui.showRanges){
+    store.tags.forEach(tg=>{
+      if (!tg.fix || tagStale(tg)) return;
+      A.forEach(a=>{ const d = tg.fix['d'+a.id]; if (d==null) return;
+        ctx.beginPath(); ctx.arc(wx(a.x),wy(a.y), d*view.scale, 0, 2*Math.PI);
+        ctx.strokeStyle = tg.color+'22'; ctx.setLineDash([4,6]); ctx.stroke(); ctx.setLineDash([]); });
+    });
+  }
+  // robot centre trail (the body path — one line, not two)
+  if (store.ui.showTrail && store.robotTrail.length>1){
+    ctx.beginPath(); ctx.moveTo(wx(store.robotTrail[0].x),wy(store.robotTrail[0].y));
+    for (const p of store.robotTrail) ctx.lineTo(wx(p.x),wy(p.y));
+    ctx.strokeStyle='rgba(232,244,255,0.30)'; ctx.lineWidth=1.5; ctx.stroke(); ctx.lineWidth=1;
+  }
+  // per-tag trails (engineering detail — TUNE only)
+  if (mode==='tune' && store.ui.showTrail){
+    store.tags.forEach(tg=>{
+      if (tg.trail.length<2) return;
+      ctx.beginPath(); ctx.moveTo(wx(tg.trail[0].x),wy(tg.trail[0].y));
+      for (const p of tg.trail) ctx.lineTo(wx(p.x),wy(p.y));
+      ctx.strokeStyle = tg.color+'33'; ctx.stroke();
+    });
+  }
+  // anchors
+  A.forEach(a=>{
+    const ax=wx(a.x), ay=wy(a.y);
+    ctx.beginPath(); ctx.arc(ax,ay,13,0,2*Math.PI); ctx.strokeStyle='rgba(255,157,0,0.3)'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(ax,ay,5,0,2*Math.PI); ctx.fillStyle='#ff9d00'; ctx.fill();
+    ctx.font='11px "Share Tech Mono"'; ctx.fillStyle='#ff9d00'; ctx.textAlign='center';
+    ctx.fillText('A'+a.id, ax, ay-19);
+    ctx.font='9px "Share Tech Mono"'; ctx.fillStyle='rgba(255,157,0,0.45)';
+    ctx.fillText('('+a.x.toFixed(2)+', '+a.y.toFixed(2)+')', ax, ay+24);
+  });
+
+  drawRobot();
+  drawTags(mode);
+
+  // survey grid — calibration mode only
+  if (mode==='cal') drawGrid();
+
+  // axes hint
+  ctx.font='10px "Share Tech Mono"'; ctx.fillStyle='rgba(74,96,112,0.7)';
+  ctx.textAlign='left'; ctx.fillText('X →', W-34, H-10);
+  ctx.save(); ctx.translate(12,34); ctx.fillText('Y ↑',0,0); ctx.restore();
+}
+
+function drawRobot(){
+  const r = store.robot; if (!r || r.cx==null) return;
+  const stale = nowTs() - (r._rxTs||0) > 2.0;
+  const ghost = !r.both_present || stale;
+  const cx=wx(r.cx), cy=wy(r.cy);
+  const b = (r.baseline_m ?? store.config.baseline_nominal_m);
+  const hd = r.heading_deg;
+  ctx.save();
+  ctx.globalAlpha = ghost ? 0.38 : 1;
+  if (hd != null){
+    const th = -hd*Math.PI/180;               // canvas y is flipped
+    ctx.translate(cx,cy); ctx.rotate(th);
+    const L = (b + 0.14)*view.scale, Wd = ROBOT_W*view.scale;
+    // footprint
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(-L/2,-Wd/2,L,Wd,6); else ctx.rect(-L/2,-Wd/2,L,Wd);
+    ctx.strokeStyle = ghost ? 'rgba(232,244,255,0.5)' : 'rgba(232,244,255,0.75)';
+    ctx.lineWidth = 1.5; if (ghost) ctx.setLineDash([6,5]);
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='rgba(232,244,255,0.05)'; ctx.fill();
+    // baseline segment
+    ctx.beginPath(); ctx.moveTo(-b/2*view.scale,0); ctx.lineTo(b/2*view.scale,0);
+    ctx.strokeStyle='rgba(232,244,255,0.45)'; ctx.stroke();
+    // heading arrow (baseline direction, master→slave)
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(L*0.72,0);
+    ctx.strokeStyle='#e8f4ff'; ctx.lineWidth=2; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(L*0.72,0); ctx.lineTo(L*0.72-8,-5); ctx.lineTo(L*0.72-8,5); ctx.closePath();
+    ctx.fillStyle='#e8f4ff'; ctx.fill();
+    ctx.rotate(-th); ctx.translate(-cx,-cy);
+  }
+  // centre marker ⊕
+  ctx.lineWidth=1.5; ctx.strokeStyle='#e8f4ff';
+  ctx.beginPath(); ctx.arc(cx,cy,7,0,2*Math.PI); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-11,cy); ctx.lineTo(cx+11,cy); ctx.moveTo(cx,cy-11); ctx.lineTo(cx,cy+11); ctx.stroke();
+  ctx.lineWidth=1;
+  ctx.restore();
+}
+
+function drawTags(mode){
+  const mid = masterId();
+  store.tags.forEach((tg,tid)=>{
+    if (!tg.fix) return;
+    const stale = tagStale(tg);
+    const tx=wx(tg.fix.ex), ty=wy(tg.fix.ey);
+    ctx.save(); ctx.globalAlpha = stale ? 0.35 : 1;
+    // uncertainty ellipse (TUNE)
+    if (mode==='tune' && tg.fix.pos_cov) drawCovEllipse(tg.fix.pos_cov, tx, ty, tg.color);
+    // marker: solid disc, hollow when stale
+    ctx.beginPath(); ctx.arc(tx,ty,5.5,0,2*Math.PI);
+    if (stale){ ctx.strokeStyle=tg.color; ctx.lineWidth=1.5; ctx.stroke(); }
+    else { ctx.fillStyle=tg.color; ctx.shadowColor=tg.color; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0; }
+    ctx.font='10px "Share Tech Mono"'; ctx.fillStyle=tg.color; ctx.textAlign='left';
+    const role = tid===mid ? 'M' : 'S';
+    ctx.fillText(hex(tid)+' '+role + (mode!=='operate' ? ' ('+tg.fix.ex.toFixed(2)+','+tg.fix.ey.toFixed(2)+')' : ''),
+                 tx+10, ty-9);
+    ctx.restore();
+  });
+}
+
+function drawCovEllipse(P, cx, cy, color){
+  // eigen-decomposition of 2x2 symmetric [ [a,b],[b,c] ]; draw 2σ ellipse
+  const a=P[0][0], b=P[0][1], c=P[1][1];
+  const tr=a+c, det=a*c-b*b;
+  const d=Math.sqrt(Math.max(0,tr*tr/4-det));
+  const l1=tr/2+d, l2=tr/2-d;
+  if (l1<=0) return;
+  const th = Math.abs(b)<1e-12 ? (a>=c?0:Math.PI/2) : Math.atan2(l1-a, b);
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(-th);
+  ctx.beginPath();
+  ctx.ellipse(0,0, 2*Math.sqrt(l1)*view.scale, 2*Math.sqrt(Math.max(l2,0))*view.scale, 0, 0, 2*Math.PI);
+  ctx.strokeStyle=color+'55'; ctx.stroke();
+  ctx.restore();
+}
+
+function drawGrid(){
+  GRID.forEach((pt,i)=>{
+    const gx=wx(pt[0]), gy=wy(pt[1]);
+    const isSel = Survey.selected===i;
+    const isCap = Survey.captured.has(i);
+    ctx.beginPath(); ctx.arc(gx,gy,isSel?13:9,0,2*Math.PI);
+    ctx.strokeStyle = isCap ? '#00ff9d' : isSel ? '#00d4ff' : 'rgba(200,218,232,0.25)';
+    ctx.lineWidth = (isCap||isSel)?2:1;
+    ctx.fillStyle = isCap ? 'rgba(0,255,157,0.08)' : isSel ? 'rgba(0,212,255,0.08)' : 'rgba(200,218,232,0.03)';
+    ctx.fill(); ctx.stroke(); ctx.lineWidth=1;
+    ctx.font='9px "Share Tech Mono"'; ctx.textAlign='center';
+    ctx.fillStyle = isSel ? '#00d4ff' : 'rgba(200,218,232,0.35)';
+    ctx.fillText('('+pt[0]+','+pt[1]+')', gx, gy-(isSel?17:13));
+    if (isCap){ ctx.fillStyle='#00ff9d'; ctx.fillText('✓', gx, gy+20); }
+  });
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   DOM RENDER (throttled) — reads the store only.
+   ═════════════════════════════════════════════════════════════════════════ */
+function buildStatic(){
+  // tag legend
+  const el = document.getElementById('tag-legend');
+  if (!store.tags.size){ el.style.display='none'; }
+  else{
+    el.style.display='block';
+    const mid = masterId();
+    el.innerHTML = [...store.tags.entries()].map(([tid,tg])=>{
+      const stale = tagStale(tg);
+      return `<div style="display:flex;align-items:center;gap:7px">
+        <span style="width:9px;height:9px;border-radius:50%;background:${tg.color};${stale?'opacity:.35':`box-shadow:0 0 6px ${tg.color}`}"></span>
+        <span style="color:${tg.color}">${hex(tid)} ${tid===mid?'MASTER':'SLAVE'}${stale?' · STALE':''}</span></div>`;
+    }).join('');
+  }
+  HwCal.buildRows();
+}
+
+function fmtDeg(v){ return v==null ? '—' : v.toFixed(1)+'°'; }
+function cls(v, ok, warn){ return v<=ok ? 'ok' : v<=warn ? 'warnc' : 'bad'; }
+
+function renderOperate(){
+  const r = store.robot;
+  const set=(id,txt,c)=>{ const e=document.getElementById(id); e.textContent=txt; if(c!==undefined) e.className=e.className.replace(/\b(ok|warnc|bad)\b/g,'').trim()+' '+(c||''); };
+  if (r){
+    set('rb-x', r.cx.toFixed(3)+' m'); set('rb-y', r.cy.toFixed(3)+' m');
+    set('rb-hdg', fmtDeg(r.heading_deg));
+    const q = r.quality ?? 0;
+    document.getElementById('rb-q').textContent = (q*100).toFixed(0)+' %';
+    const qb = document.getElementById('rb-qbar');
+    qb.style.width = (q*100)+'%'; qb.style.background = q>0.6?'var(--accent2)':q>0.3?'var(--warn)':'var(--danger)';
+    document.getElementById('rb-basenom').textContent = store.config.baseline_nominal_m.toFixed(3)+' m';
+    if (r.baseline_m != null){
+      const errmm = r.baseline_err_m*1000;
+      document.getElementById('rb-base').textContent = r.baseline_m.toFixed(3)+' m';
+      const be = document.getElementById('rb-baseerr');
+      be.textContent = (errmm>=0?'+':'')+errmm.toFixed(0)+' mm';
+      be.className = 'v '+cls(Math.abs(errmm), 30, 80);
+    } else {
+      document.getElementById('rb-base').textContent = '— (single tag)';
+      document.getElementById('rb-baseerr').textContent = '—';
+    }
+    document.getElementById('rb-speed').textContent = r.speed.toFixed(2)+' m/s';
+    document.getElementById('rb-course').textContent =
+      r.speed > 0.05 ? fmtDeg(Math.atan2(r.vy,r.vx)*180/Math.PI) : '—';
+  }
+  // motion state from master's ZUPT
+  const m = tagOf(masterId());
+  document.getElementById('rb-motion').textContent =
+    m && m.fix ? (m.fix.zupt ? 'STATIONARY' : 'MOVING') : '—';
+  // IMU (bound to MASTER explicitly — never blinks)
+  if (m && m.fix && m.fix.imu){
+    document.getElementById('op-roll').textContent  = m.fix.imu.roll.toFixed(1)+'°';
+    document.getElementById('op-pitch').textContent = m.fix.imu.pitch.toFixed(1)+'°';
+    document.getElementById('op-yaw').textContent   = m.fix.imu.yaw.toFixed(1)+'°';
+  }
+  // degraded banner
+  const bn = document.getElementById('degraded-banner');
+  if (r && !r.both_present && store.tags.size >= 1){
+    const missing = r.present_id === r.master_id ? r.slave_id : r.master_id;
+    const mt = tagOf(missing);
+    const age = mt ? (nowTs()-mt.lastTs).toFixed(1) : '?';
+    bn.style.display='block';
+    bn.textContent = `SINGLE TAG — ${hex(missing)} stale ${age} s · heading held`;
+  } else bn.style.display='none';
+  // health pills
+  const s = tagOf(slaveId());
+  const pills = [];
+  const both = r && r.both_present && !(nowTs()-(r._rxTs||0) > 2);
+  pills.push(pill(both?'p-ok':(store.tags.size?'p-warn':'p-bad'), both?'BOTH TAGS':'SINGLE TAG'));
+  if (m && m.fix){
+    const conf = m.fix.imu_orient_conf ?? (m.fix.imu?3:0);
+    pills.push(pill(m.fix.imu ? (conf>=2?'p-ok':'p-warn') : 'p-bad', 'IMU '+(m.fix.imu?('conf '+conf):'none')));
+    const h = m.fix.health||{};
+    pills.push(pill(h.ekf_initialized ? (h.correction_accepted?'p-ok':'p-warn') : 'p-bad', 'EKF '+(h.prediction_mode||'—')));
+    pills.push(pill((h.n_anchors_used||0)>=3?'p-ok':'p-warn', 'UWB '+(h.n_anchors_used||0)+'A'));
+  }
+  if (s && s.fix){ const h=s.fix.health||{};
+    pills.push(pill((h.n_anchors_used||0)>=3?'p-ok':'p-warn', 'UWB(S) '+(h.n_anchors_used||0)+'A')); }
+  document.getElementById('op-health').innerHTML = pills.join('');
+}
+function pill(c,t){ return `<span class="pill ${c}">${t}</span>`; }
+
+function renderTune(){
+  const ids = [...store.tags.keys()].sort((a,b)=>a-b);
+  const mid = masterId();
+  // per-tag table
+  document.getElementById('pt-head').innerHTML =
+    '<th>&nbsp;</th>' + ids.map(id=>`<th style="color:${store.tags.get(id).color}">${hex(id)} ${id===mid?'M':'S'}</th>`).join('');
+  const rows = [
+    ['x m',      t=>t.fix.ex.toFixed(3)],
+    ['y m',      t=>t.fix.ey.toFixed(3)],
+    ['rmse m',   t=>t.fix.rmse!=null?t.fix.rmse.toFixed(3):'—'],
+    ['n used',   t=>t.fix.nUsed ?? '—'],
+    ['cycle',    t=>t.fix.cycle ?? '—'],
+    ['age ms',   t=>((nowTs()-t.lastTs)*1000).toFixed(0)],
+    ['fixes',    t=>t.nFix],
+  ];
+  document.getElementById('pt-body').innerHTML = rows.map(([lbl,fn])=>
+    '<tr><td>'+lbl+'</td>'+ids.map(id=>{
+      const t = store.tags.get(id);
+      return '<td>'+(t.fix?fn(t):'—')+'</td>';
+    }).join('')+'</tr>').join('');
+  // NLOS matrix
+  const A = store.config.anchors;
+  document.getElementById('nm-head').innerHTML = '<th>&nbsp;</th>'+A.map(a=>'<th>A'+a.id+'</th>').join('');
+  document.getElementById('nm-body').innerHTML = ids.map(id=>{
+    const t = store.tags.get(id);
+    const diag = (t.fix && t.fix.anchor_diag) || [];
+    return `<tr><td style="color:${t.color}">${hex(id)}</td>`+A.map(a=>{
+      const d = diag.find(x=>x.id===a.id);
+      if (!d) return '<td><span class="cell c-none">—</span></td>';
+      const g=d.gap, c = g<3?'c-los':g<6?'c-soft':'c-nlos';
+      const l = g<3?'LOS':g<6?'soft':'NLOS';
+      return `<td><span class="cell ${c}" title="gap ${g.toFixed(1)} dB · w=${d.w.toFixed(2)} · resid ${(d.resid*1000).toFixed(0)} mm${d.used?'':' · GATED'}">${l}${d.used?'':'✗'}</span></td>`;
+    }).join('')+'</tr>';
+  }).join('');
+  // anchor table (both tags' distances + Δ)
+  const M = tagOf(mid), S = tagOf(slaveId());
+  document.getElementById('an-body').innerHTML = A.map(a=>{
+    const dm = M&&M.fix ? M.fix['d'+a.id] : null;
+    const ds = S&&S.fix ? S.fix['d'+a.id] : null;
+    const dg = M&&M.fix&&M.fix.anchor_diag ? M.fix.anchor_diag.find(x=>x.id===a.id) : null;
+    const um = dg ? (dg.used?'✓':'✗') : '·';
+    const us = S&&S.fix&&S.fix.anchor_diag ? ((S.fix.anchor_diag.find(x=>x.id===a.id)||{}).used?'✓':'✗') : '·';
+    return `<tr><td>A${a.id}</td><td>${dm!=null?dm.toFixed(2):'—'}</td><td>${ds!=null?ds.toFixed(2):'—'}</td>`+
+      `<td>${dm!=null&&ds!=null?Math.abs(dm-ds).toFixed(2):'—'}</td>`+
+      `<td>${dg?dg.rx.toFixed(0)+'/'+dg.fp.toFixed(0):'—'}</td><td>${um}${us}</td></tr>`;
+  }).join('');
+  // EKF block (master)
+  if (M && M.fix){
+    const f = M.fix;
+    document.getElementById('tk-vel').textContent =
+      f.vx!=null ? `(${f.vx.toFixed(2)}, ${f.vy.toFixed(2)}) ${f.speed.toFixed(2)} m/s` : '—';
+    document.getElementById('tk-nis').textContent =
+      f.nis!=null ? f.nis.toFixed(2)+(f.meas_accepted?' ✓':' ✗REJ') : '—';
+    document.getElementById('tk-bias').textContent =
+      f.bx!=null ? `(${f.bx.toFixed(3)}, ${f.by.toFixed(3)})` : '—';
+    document.getElementById('tk-mode').textContent = (f.pred_mode||'—')+(f.zupt?' · ZUPT':'');
+  }
+  // session bbox from robot trail
+  if (store.robotTrail.length){
+    const xs=store.robotTrail.map(p=>p.x), ys=store.robotTrail.map(p=>p.y);
+    document.getElementById('ss-x').textContent = Math.min(...xs).toFixed(2)+' … '+Math.max(...xs).toFixed(2);
+    document.getElementById('ss-y').textContent = Math.min(...ys).toFixed(2)+' … '+Math.max(...ys).toFixed(2);
+  }
+}
+
+/* sparkline helper */
+function spark(id, data, color){
+  const c = document.getElementById(id); if (!c) return;
+  const g = c.getContext('2d'); const W=c.width=c.clientWidth||300, H=c.height;
+  g.clearRect(0,0,W,H);
+  if (data.length<2) return;
+  const mn=Math.min(...data), mx=Math.max(...data), sp=(mx-mn)||1;
+  g.beginPath();
+  data.forEach((v,i)=>{ const x=i/(data.length-1)*W, y=H-3-(v-mn)/sp*(H-8); i?g.lineTo(x,y):g.moveTo(x,y); });
+  g.strokeStyle=color; g.lineWidth=1.3; g.stroke();
+  g.font='9px "Share Tech Mono"'; g.fillStyle='rgba(74,96,112,0.9)'; g.textAlign='left';
+  g.fillText(mx.toFixed(0),2,9); g.fillText(mn.toFixed(0),2,H-1);
+}
+
+function renderDiag(){
+  const s = store.system, d = s.diag;
+  if (d){
+    document.getElementById('dg-cycle').textContent = d.cycle;
+    document.getElementById('dg-rate').textContent = d.rate_hz.toFixed(1);
+    document.getElementById('dg-total').textContent = (d.total_us/1000).toFixed(1);
+    const segs = [['master_us','var(--accent)'],['slave_us','var(--danger)'],['uart_us','var(--violet)'],
+                  ['proc_us','var(--warn)'],['idle_us','var(--muted)']];
+    document.getElementById('dg-budget').innerHTML = segs.map(([k,col])=>{
+      const pct = Math.max(0, d[k]/d.total_us*100);
+      return `<div style="width:${pct}%;background:${col}">${pct>9?(d[k]/1000).toFixed(0)+'ms':''}</div>`;
+    }).join('');
+    document.getElementById('dg-master').textContent=(d.master_us/1000).toFixed(1)+'ms';
+    document.getElementById('dg-slave').textContent =(d.slave_us/1000).toFixed(1)+'ms';
+    document.getElementById('dg-uart').textContent  =(d.uart_us/1000).toFixed(1)+'ms';
+    document.getElementById('dg-proc').textContent  =(d.proc_us/1000).toFixed(1)+'ms';
+    document.getElementById('dg-idle').textContent  =(d.idle_us/1000).toFixed(1)+'ms';
+    spark('sp-rate',   s.rateHist, '#00d4ff');
+    spark('sp-master', s.diagHist.map(x=>x.master_us), '#00d4ff');
+    spark('sp-slave',  s.diagHist.map(x=>x.slave_us),  '#ff3d5a');
+    spark('sp-uart',   s.diagHist.map(x=>x.uart_us),   '#a78bfa');
+  }
+  const mid = masterId();
+  document.getElementById('dg-tags').innerHTML = [...store.tags.entries()].map(([tid,tg])=>{
+    const age=((nowTs()-tg.lastTs)*1000).toFixed(0);
+    const st = tagStale(tg) ? '<span class="bad">STALE</span>' : '<span class="ok">LIVE</span>';
+    return `<tr><td style="color:${tg.color}">${hex(tid)}</td><td>${tid===mid?'master':'slave'}</td>`+
+           `<td>${tg.nFix}</td><td>${age}</td><td>${st}</td></tr>`;
+  }).join('');
+  document.getElementById('dg-sync').textContent = s.robotN
+    ? (s.robotPaired/s.robotN*100).toFixed(1)+' %  ('+s.robotPaired+'/'+s.robotN+')' : '—';
+  if (s.link){
+    const l = s.link;
+    document.getElementById('dg-link').innerHTML =
+      ['crc','resync','stale','gap','dup','tmo'].map(k=>{
+        const v = l[k] ?? 0;
+        return `<span class="pill ${v? 'p-warn':'p-ok'}">${k} ${v}</span>`;
+      }).join('');
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   CALIBRATE — survey / hwcalib / baseline verification / error map / summary
+   ═════════════════════════════════════════════════════════════════════════ */
+/* ═════════════════════════════════════════════════════════════════════════
+   JOBS — long host operations, rendered generically.
+
+   Deliberately knows nothing about any specific tool: the host advertises what
+   it can run in `job_kinds` (with an args schema), and every job reports the
+   same job_started/progress/log/done/failed/cancelled lifecycle. That is what
+   keeps ~29 tools from becoming ~29 hand-written panels.
+
+   Replay works for free — these are ordinary recorded messages, so replaying a
+   session re-renders the jobs that ran during it.
+   ═════════════════════════════════════════════════════════════════════════ */
+const Jobs = {
+  jobs:new Map(),     // job_id -> {kind,title,state,frac,msg,log,elapsed,error}
+  kinds:[],           // advertised by the host on connect
+  MAX_SHOWN:6,
+
+  on(d){
+    const t=d.type;
+    if (t==='job_kinds'){ this.kinds=d.kinds||[]; Lab.populate(); CalTools.populate(); return; }
+    if (t==='job_list'){ (d.jobs||[]).forEach(j=>this.jobs.set(j.job_id,
+        Object.assign(this.jobs.get(j.job_id)||{}, j))); return this.render(); }
+
+    const id=d.job_id; if (!id) return;
+    let j=this.jobs.get(id);
+    if (t==='job_started'){
+      j={kind:d.kind,title:d.title||d.kind,state:'running',frac:0,msg:'',
+         log:'',cancellable:d.cancellable!==false,started:d.started_ts};
+      this.jobs.set(id,j);
+      logMsg('job '+(d.title||d.kind)+' started');
+    }
+    if (!j){ Lab.onJob(d); return; }      // progress for a job we never saw start
+    if (t==='job_progress'){ if (d.frac!=null) j.frac=d.frac; if (d.msg) j.msg=d.msg; }
+    if (t==='job_log')      { j.log=d.msg; }
+    if (t==='job_done'){ j.state='done'; j.frac=1; j.elapsed=d.elapsed_s;
+      j.artifacts=d.artifacts||[]; j.result=d.result||{};
+      logMsg('job '+j.title+' done in '+d.elapsed_s+'s'); }
+    if (t==='job_failed'){ j.state='failed'; j.elapsed=d.elapsed_s; j.error=d.error;
+      logMsg('job '+(j.title||d.kind||'?')+' FAILED: '+d.error); }
+    if (t==='job_cancelled'){ j.state='cancelled'; j.elapsed=d.elapsed_s;
+      logMsg('job '+j.title+' cancelled'); }
+    this.render();
+    Lab.onJob(d);          // LAB tracks the job it started, for its output pane
+  },
+
+  // A rejected job_run never gets a job_started, so surface it as a log line
+  // rather than silently dropping it — the old backend's silence on unknown
+  // message types is exactly what this replaces.
+  onError(d){ logMsg('host: '+(d.code||'error')+(d.got?' ('+d.got+')':'')+
+                     (d.error?' — '+d.error:'')); },
+
+  run(kind,args,reqId){ return DataManager.send(
+      {type:'job_run', kind:kind, args:args||{}, req_id:reqId||('r'+Date.now())}); },
+  cancel(id){ DataManager.send({type:'job_cancel', job_id:id}); },
+
+  render(){
+    const host=document.getElementById('jobs-list'); if(!host) return;
+    const ids=[...this.jobs.keys()].slice(-this.MAX_SHOWN).reverse();
+    const running=ids.filter(i=>this.jobs.get(i).state==='running').length;
+    document.getElementById('jobs-idle').textContent =
+        running ? '· '+running+' running' : '· idle';
+    document.getElementById('jobs-hint').style.display = ids.length?'none':'block';
+    host.innerHTML = ids.map(id=>{
+      const j=this.jobs.get(id);
+      const pct=Math.round((j.frac||0)*100);
+      const tail = j.state==='running' ? (j.msg||j.log||'')
+                 : j.state==='failed'  ? (j.error||'failed')
+                 : (j.elapsed!=null ? j.elapsed+'s' : j.state);
+      const colour = j.state==='failed'    ? 'var(--danger)'
+                   : j.state==='cancelled' ? 'var(--warn)'
+                   : j.state==='done'      ? 'var(--accent2)' : 'var(--accent)';
+      return '<div style="margin-bottom:7px">'
+        + '<div class="vrow"><span class="l">'+esc(j.title||j.kind)+'</span>'
+        + '<span class="v" style="color:'+colour+'">'+esc(j.state)+'</span></div>'
+        + (j.state==='running'
+            ? '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div>'
+            : '')
+        + '<div class="note" style="display:flex;justify-content:space-between;gap:6px">'
+        + '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(tail)+'</span>'
+        + (j.state==='running' && j.cancellable
+            ? '<a href="#" onclick="Jobs.cancel(\''+id+'\');return false">cancel</a>' : '')
+        + '</div></div>';
+    }).join('');
+  },
+};
+function esc(s){ return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ═════════════════════════════════════════════════════════════════════════
+   LAB — run any offline tool the host advertises.
+
+   The whole panel is generated: the host sends `job_kinds`, each carrying an
+   `args_schema`, and the form is built from that. Five field types cover every
+   tool (number, bool, string, enum, path), which is what keeps ~29 tools from
+   turning into ~29 hand-written panels. Adding a tool server-side needs no
+   change here at all.
+   ═════════════════════════════════════════════════════════════════════════ */
+/* Shared argument-form generator. Used by both LAB and CAL: the host advertises
+   each tool's args_schema, so neither panel hand-writes markup and a new tool
+   costs nothing here. `prefix` keys the element ids so two generated forms can
+   coexist on the page. */
+function buildArgForm(hostId, kind, files, prefix){
+  const host = document.getElementById(hostId); if (!host) return;
+  const spec = Jobs.kinds.find(k=>k.kind===kind);
+  if (!spec){ host.innerHTML = ''; return; }
+  const rows = Object.entries(spec.args_schema||{}).map(function(kv){
+    const name = kv[0], a = kv[1], id = prefix+name;
+    let field;
+    if (a.t === 'bool'){
+      field = '<input type="checkbox" id="'+id+'"'+(a.default?' checked':'')+'>';
+    } else if (a.t === 'enum'){
+      field = '<select id="'+id+'">'+(a.choices||[]).map(c=>
+        '<option'+(c===a.default?' selected':'')+'>'+esc(c)+'</option>').join('')+'</select>';
+    } else if (a.t === 'path'){
+      const list = (files||{})[a.kind||'logs'] || [];
+      field = '<select id="'+id+'">'
+        + (a.required ? '' : '<option value="">(default)</option>')
+        + (list.length ? list.map(f=>'<option value="'+esc(f.path)+'">'+esc(f.name)+'</option>').join('')
+                       : '<option value="">(no files found)</option>')
+        + '</select>';
+    } else {
+      const v = a.default!=null ? a.default : '';
+      field = '<input id="'+id+'" value="'+esc(v)+'"'
+            + (a.t==='number' ? ' inputmode="decimal"' : '') + '>';
+    }
+    return '<div class="arg-row"><label title="'+esc(name)+'">'+esc(name)+'</label>'+field+'</div>';
+  });
+  host.innerHTML = rows.join('') || '<div class="note">no arguments</div>';
+}
+
+function collectArgs(kind, prefix){
+  const spec = Jobs.kinds.find(k=>k.kind===kind); if (!spec) return {};
+  const args = {};
+  for (const kv of Object.entries(spec.args_schema||{})){
+    const el = document.getElementById(prefix+kv[0]); if (!el) continue;
+    args[kv[0]] = (kv[1].t === 'bool') ? el.checked : el.value;
+  }
+  return args;
+}
+
+/* CAL tool runner: the same generator, filtered to mode==='cal'. These drive the
+   tag over the link, and anything that writes hardware defaults to a dry run
+   server-side — the checkbox simply reflects that default. */
+const CalTools = {
+  kind:null,
+  populate(){
+    const sel = document.getElementById('cal-kind'); if (!sel) return;
+    const kinds = Jobs.kinds.filter(k=>k.mode === 'cal');
+    sel.innerHTML = kinds.map(k=>'<option value="'+esc(k.kind)+'">'+esc(k.title)+'</option>').join('');
+    if (kinds.length && !this.kind) this.select(kinds[0].kind);
+  },
+  select(kind){ this.kind = kind; buildArgForm('cal-args', kind, {}, 'cal-arg-'); },
+  run(){
+    if (!this.kind) return;
+    if (!Jobs.run(this.kind, collectArgs(this.kind, 'cal-arg-'), 'cal'+Date.now()))
+      logMsg('not connected');
+  },
+};
+
+/* RUN — the rover. Arming needs the token from a recent rover_status, so a
+   queued or replayed click cannot arm a rover the operator is not looking at,
+   and it needs a 2 s press-and-hold. */
+/* RUN CAPTURE. Stopping chains the report rather than leaving it as a separate
+   click: a run nobody scores is a run nobody learns from, and the moment the
+   operator cares is standing next to the rover. */
+const Capture = {
+  running:false,
+  on(d){
+    if (d.type === 'capture_error'){ logMsg('capture: '+d.error); return; }
+    if (d.type !== 'capture_status') return;
+    this.running = !!d.running;
+    const set = (id,v)=>{ const e=document.getElementById(id); if (e) e.textContent=v; };
+    set('cap-state', d.running ? 'RECORDING' : 'idle');
+    set('cap-n', d.n_uwb!=null ? (d.n_uwb+' sweeps / '+(d.n_rover||0)+' samples') : '—');
+    if (!d.running && d.mat) logMsg('capture written: '+d.mat.split(/[\\/]/).pop());
+  },
+  start(){ DataManager.send({type:'capture_start'}); },
+  stop(){ DataManager.send({type:'capture_stop'}); },
+};
+
+const Rover = {
+  token:null, armed:false, _holdTimer:null,
+
+  on(d){
+    if (d.type === 'rover_error'){ this.note(d.error); return; }
+    if (d.type !== 'rover_status') return;
+    if (d.token) this.token = d.token;
+    this.armed = !!d.armed;
+    const set = (id, v) => { const e = document.getElementById(id);
+                             if (e) e.textContent = v; };
+    set('rv-conn', d.connected ? ('connected '+(d.version||'')) : 'disconnected');
+    set('rv-armed', d.armed ? 'ARMED' : 'safe');
+    set('rv-mode', d.mode || '—');
+    set('rv-vel', d.v!=null ? (d.v.toFixed(3)+' / '+(d.omega||0).toFixed(3)) : '—');
+    set('rv-lease', d.arm_expires_in_s!=null ? d.arm_expires_in_s+' s' : '—');
+    const imu = d.imu || {};
+    set('rv-att', imu.pitch!=null
+        ? (imu.pitch.toFixed(1)+'° / '+(imu.roll||0).toFixed(1)+'°') : '—');
+    set('rv-fault', d.fault || '—');
+    const pad = d.pad || {};
+    set('rv-pad', pad.present
+        ? ('ok  '+(pad.v!=null?pad.v.toFixed(3):'')+' / '+(pad.omega!=null?pad.omega.toFixed(3):''))
+        : 'none');
+    const btn = document.getElementById('rv-arm');
+    if (btn) btn.classList.toggle('armed', !!d.armed);
+    if (d.note) this.note(d.note);
+  },
+
+  note(m){ const e=document.getElementById('rv-note'); if (e) e.textContent = m;
+           logMsg('rover: '+m); },
+
+  connect(){ DataManager.send({type:'rover_connect',
+                               port:document.getElementById('rv-port').value}); },
+  disconnect(){ DataManager.send({type:'rover_disconnect'}); },
+  disarm(){ DataManager.send({type:'rover_disarm'}); },
+  stop(){ DataManager.send({type:'rover_stop', reason:'operator stop'}); },
+
+  // Press-and-hold, so arming cannot happen on a stray click.
+  armHold(down){
+    if (!down){ clearTimeout(this._holdTimer); this._holdTimer = null;
+                this.note('arm cancelled'); return; }
+    this.note('hold…');
+    this._holdTimer = setTimeout(() => {
+      DataManager.send({type:'rover_arm', token:this.token});
+    }, 2000);
+  },
+
+  nudge(v, omega){
+    if (!this.armed){ this.note('not armed'); return; }
+    DataManager.send({type:'rover_nudge', v:v, omega:omega, duration_s:0.4});
+  },
+};
+
+const Lab = {
+  files:{},          // kind -> [{path,name,bytes,mtime}]
+  kind:null,
+  jobId:null,
+  artifacts:[],
+  shown:null,
+
+  // ── inbound ───────────────────────────────────────────────────────────────
+  on(d){
+    if (d.type === 'fs_listing'){ this.files[d.kind] = d.files || [];
+      if (this.kind) this.buildForm(); return; }
+    if (d.type === 'fs_error'){ this.status('file list: '+d.error); return; }
+  },
+
+  onJob(d){                       // forwarded by Jobs.on for jobs we started
+    if (d.type === 'job_started' && d.req_id && d.req_id === this._req){
+      this.jobId = d.job_id; this.artifacts = []; this.shown = null;
+      document.getElementById('lab-out').textContent = '';
+      this.renderTabs(); this.status('running '+d.title);
+    }
+    if (d.job_id !== this.jobId) return;
+    if (d.type === 'job_done'){
+      this.artifacts = d.artifacts || [];
+      this.status('done in '+d.elapsed_s+'s');
+      this.renderTabs();
+      const first = this.artifacts.find(a=>a.kind==='txt') || this.artifacts[0];
+      if (first) this.show(first.path);
+    }
+    if (d.type === 'job_failed')    this.status('failed: '+d.error);
+    if (d.type === 'job_cancelled') this.status('cancelled');
+    if (d.type === 'job_artifact'){
+      const out = document.getElementById('lab-out');
+      if (d.kind === 'png'){
+        out.innerHTML = '<img alt="'+esc(d.path)+'" src="data:image/png;base64,'+d.b64+'">';
+      } else {
+        out.textContent = d.text || '';
+      }
+      this.shown = d.path; this.renderTabs();
+    }
+    if (d.type === 'job_artifact_error') this.status('artifact: '+d.error);
+  },
+
+  // ── tool selection ────────────────────────────────────────────────────────
+  populate(){
+    const sel = document.getElementById('lab-kind'); if (!sel) return;
+    const kinds = Jobs.kinds.filter(k=>k.mode === 'lab');
+    sel.innerHTML = kinds.map(k=>'<option value="'+esc(k.kind)+'">'+esc(k.title)+'</option>').join('');
+    if (kinds.length && !this.kind) this.selectKind(kinds[0].kind);
+  },
+
+  selectKind(kind){
+    this.kind = kind;
+    const spec = Jobs.kinds.find(k=>k.kind===kind); if (!spec) return;
+    // Ask for the file lists this tool's path arguments need.
+    const wanted = new Set(Object.values(spec.args_schema||{})
+                                 .filter(a=>a.t==='path').map(a=>a.kind||'logs'));
+    wanted.forEach(k=>{ if (!this.files[k]) DataManager.send({type:'fs_list', kind:k}); });
+    this.buildForm();
+  },
+
+  refresh(){ this.files = {}; this.selectKind(this.kind); },
+
+  // ── the generated form ────────────────────────────────────────────────────
+  buildForm(){ buildArgForm('lab-args', this.kind, this.files, 'arg-'); },
+
+  collect(){ return collectArgs(this.kind, 'arg-'); },
+
+  run(){
+    if (!this.kind) return;
+    this._req = 'lab'+Date.now();
+    if (!Jobs.run(this.kind, this.collect(), this._req))
+      this.status('not connected');
+  },
+
+  // ── artifact tabs ─────────────────────────────────────────────────────────
+  renderTabs(){
+    const el = document.getElementById('lab-tabs'); if (!el) return;
+    if (!this.artifacts.length){
+      el.innerHTML = '<span class="note" id="lab-hint">'
+        + (this.jobId ? 'running…' : 'run a tool to see its output here') + '</span>';
+      return;
+    }
+    // Built as DOM nodes with real listeners rather than an innerHTML string
+    // with an inline onclick: a file path is data, and quoting it into an
+    // attribute means escaping it correctly for two nested contexts. Paths on
+    // this project routinely contain characters that make that go wrong.
+    el.innerHTML = '';
+    for (const a of this.artifacts){
+      const b = document.createElement('button');
+      b.className = 'tab' + (a.path === this.shown ? ' on' : '');
+      b.textContent = a.path.split(/[\\/]/).pop();
+      b.title = a.path;
+      b.addEventListener('click', () => this.show(a.path));
+      el.appendChild(b);
+    }
+  },
+
+  show(path){
+    if (!this.jobId) return;
+    DataManager.send({type:'job_artifact_req', job_id:this.jobId, path:path});
+  },
+
+  status(msg){ const el=document.getElementById('lab-status'); if (el) el.textContent = msg; },
+};
+
+const Survey = {
+  selected:-1, captured:new Set(), capturing:false, lastRms:null,
+  select(i){ this.selected=i;
+    document.getElementById('survey-selected').textContent='('+GRID[i][0]+', '+GRID[i][1]+')';
+    document.getElementById('btn-capture').disabled=false;
+    if (store.ui.mode==='cal' && store.ui.calStep===4) document.getElementById('btn-em-capture').disabled=false;
+  },
+  onFix(){}, // captures are server-side; nothing needed per fix
+  on(d){
+    const t=d.type;
+    if (t==='survey_capture_started'){ this.capturing=true;
+      document.getElementById('survey-progress').style.display='block';
+      document.getElementById('survey-cap-count').textContent='0 / '+d.n_samples; }
+    if (t==='survey_capture_progress'){
+      document.getElementById('survey-cap-count').textContent=d.n+' / '+d.target;
+      document.getElementById('survey-bar').style.width=(d.n/d.target*100)+'%'; }
+    if (t==='survey_capture_done'){ this.capturing=false;
+      this.captured.add(d.point_idx);
+      document.getElementById('survey-progress').style.display='none';
+      document.getElementById('survey-n-captured').textContent=this.captured.size;
+      document.getElementById('btn-compute').disabled=this.captured.size<4;
+      document.getElementById('survey-captures').innerHTML=[...this.captured].map(i=>'✓ ('+GRID[i][0]+','+GRID[i][1]+')').join(' · ');
+      logMsg('survey point '+d.point_idx+' captured'); }
+    if (t==='survey_computing') logMsg('survey: computing…');
+    if (t==='survey_result'){
+      this.lastRms = d.residual_rms;
+      document.getElementById('survey-result-box').style.display='block';
+      document.getElementById('survey-result-anchors').innerHTML =
+        (d.anchors||[]).map(a=>`A${a.id}: (${a.x.toFixed(3)}, ${a.y.toFixed(3)})`).join('<br>');
+      document.getElementById('survey-rms').textContent=(d.residual_rms!=null?d.residual_rms.toFixed(4):'—')+' m';
+      document.getElementById('cs-1').classList.add('done');
+      logMsg('survey done, RMS '+d.residual_rms); }
+    if (t==='survey_error'){ this.capturing=false; logMsg('survey error: '+d.msg); }
+    if (t==='survey_cleared'){ this.captured.clear(); this.lastRms=null;
+      document.getElementById('survey-n-captured').textContent='0';
+      document.getElementById('survey-captures').innerHTML='';
+      document.getElementById('survey-result-box').style.display='none'; }
+  },
+};
+function surveyCapture(){ if (Survey.selected<0) return;
+  DataManager.send({type:'survey_capture', point_idx:Survey.selected, n_samples:50}); }
+function surveyCompute(){ DataManager.send({type:'survey_compute'}); }
+function surveyClear(){ DataManager.send({type:'survey_clear'}); Survey.on({type:'survey_cleared'}); }
+
+const HwCal = {
+  state:{},      // anchor_id -> {status, iter, final, finalMean, resid, errHist:[]}
+  distances:{},  // anchor_id -> true distance (mm), echoed back by the host
+  buildRows(){
+    const c = document.getElementById('hwcalib-rows'); if (!c) return;
+    c.innerHTML = store.config.anchors.map(a=>{
+      const s=this.state[a.id]||{};
+      const dist = this.distances[a.id];
+      const distTxt = dist!=null ? `${dist} mm` : '—';
+      const st = s.status==='done'
+                 ? `<span class="ok">✓ delay ${s.final}${s.resid!=null?`  resid ${s.resid>=0?'+':''}${s.resid} mm`:''}</span>`
+               : s.status==='fail' ? `<span class="bad">✗ ${s.reason||'fail'}</span>`
+               : s.status==='calibrating' ? `<span class="warnc">iter ${s.iter??0}/14</span>`
+               : '<span style="color:var(--muted)">idle</span>';
+      const conv = (s.errHist&&s.errHist.length>1)
+        ? `<canvas class="spark" id="hw-sp-${a.id}" height="20" style="height:20px"></canvas>` : '';
+      return `<div class="vrow"><span class="l">A${a.id} (${distTxt})</span><span class="v">${st}</span></div>${conv}`;
+    }).join('');
+    Object.entries(this.state).forEach(([id,s])=>{
+      if (s.errHist && s.errHist.length>1) spark('hw-sp-'+id, s.errHist.map(Math.abs), '#00d4ff');
+    });
+  },
+  on(d){
+    if (d.type==='HWCALIB_REQ_ACK'){
+      this.distances = d.distances || {};
+      this.buildRows(); return;
+    }
+    if (d.type==='HWCALIB_ALL_DONE'){
+      document.getElementById('hwcalib-summary').style.display='block';
+      document.getElementById('hwcalib-summary').textContent='✓ all anchors calibrated — re-run anchor survey (①) to refresh geometry';
+      document.getElementById('btn-hwcalib').disabled=false;
+      document.getElementById('cs-2').classList.add('done');
+      logMsg('HW calibration complete'); return;
+    }
+    const p=(d.raw||'').split(','); const id=parseInt(p[1]);
+    if (isNaN(id)) return;
+    const s = this.state[id] = this.state[id] || {errHist:[]};
+    if (d.type==='HWCALIB_PROG'){ s.status='calibrating'; s.iter=parseInt(p[2]);
+      const err=parseInt(p[5]); if (!isNaN(err)) s.errHist.push(err); }
+    if (d.type==='HWCALIB_DONE'){
+      s.status='done'; s.final=parseInt(p[2]);
+      s.finalMean = p.length>3 ? parseInt(p[3]) : null;
+      s.resid     = p.length>4 ? parseInt(p[4]) : null;
+    }
+    if (d.type==='HWCALIB_FAIL'){ s.status='fail'; s.reason=p[2]; document.getElementById('btn-hwcalib').disabled=false; }
+    this.buildRows();
+  },
+};
+function hwcalibCentroid(){
+  const A = store.config.anchors;
+  if (!A.length) return {x:0,y:0};
+  return {x: A.reduce((s,a)=>s+a.x,0)/A.length, y: A.reduce((s,a)=>s+a.y,0)/A.length};
+}
+function hwcalibDefaultTagXY(){
+  const xEl=document.getElementById('hwcalib-tag-x'), yEl=document.getElementById('hwcalib-tag-y');
+  if (!xEl || !yEl || xEl.value!=='' || yEl.value!=='') return;   // don't clobber a user edit
+  const c = hwcalibCentroid();
+  xEl.value = c.x.toFixed(3); yEl.value = c.y.toFixed(3);
+}
+function toggleHwCalibSingle(){
+  const on = document.getElementById('hwcalib-single-toggle').checked;
+  document.getElementById('hwcalib-single-row').style.display = on ? 'flex' : 'none';
+  document.getElementById('hwcalib-tag-x').disabled = on;
+  document.getElementById('hwcalib-tag-y').disabled = on;
+}
+function startHwCalib(){
+  const single = document.getElementById('hwcalib-single-toggle').checked;
+  let req = {type:'HWCALIB_REQ', anchor_ids:store.config.anchors.map(a=>a.id)};
+  if (single){
+    const dist = parseInt(document.getElementById('hwcalib-dist').value);
+    if (!dist || dist<100) return;
+    req.true_dist_mm = dist;
+  } else {
+    const tx = parseFloat(document.getElementById('hwcalib-tag-x').value);
+    const ty = parseFloat(document.getElementById('hwcalib-tag-y').value);
+    if (Number.isNaN(tx) || Number.isNaN(ty)) return;
+    req.tag_x = tx; req.tag_y = ty;
+  }
+  HwCal.state={}; HwCal.distances={}; HwCal.buildRows();
+  if (DataManager.send(req))
+    document.getElementById('btn-hwcalib').disabled=true;
+}
+
+const Vision = {
+  lastUV: null,
+  _manualAssign: false,
+  buildTargetOptions(){
+    const sel = document.getElementById('vision-target'); if (!sel) return;
+    const cur = sel.value;
+    const opts = ['<option value="tag">tag initial position</option>',
+      '<option value="new">new anchor…</option>']
+      .concat(store.config.anchors.map(a=>`<option value="anchor:${a.id}">anchor A${a.id} (update)</option>`));
+    sel.innerHTML = opts.join('');
+    if ([...sel.options].some(o=>o.value===cur)) sel.value = cur;
+  },
+  grab(){ DataManager.send({type:'vision_grab'}); },
+  toggleExpand(force){
+    const ws = document.getElementById('vision-workspace');
+    const on = force !== undefined ? force : !ws.classList.contains('vision-expanded');
+    ws.classList.toggle('vision-expanded', on);
+    document.getElementById('btn-vision-expand').textContent = on ? '⤡' : '⤢';
+  },
+  detect(){ DataManager.send({type:'vision_detect'}); },
+  detectConfirm(){ DataManager.send({type:'vision_detect_confirm'}); },
+  detectCancel(){ DataManager.send({type:'vision_detect_cancel'}); },
+  renderDetectResult(d){
+    document.getElementById('vision-detect-review').style.display = 'block';
+    document.getElementById('vision-detect-status').style.display = 'none';
+
+    document.getElementById('vision-detect-rows').innerHTML = d.proposed.map(p=>{
+      const warn = p.jump_warn ? ` <span style="color:var(--danger)">(moved ${p.jump_m.toFixed(2)} m from current — verify!)</span>` : '';
+      return `<div class="vrow"><span class="l">A${p.anchor_id} ← tag ${p.apriltag_id}</span>`
+           + `<span class="v">(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)})  margin ${p.decision_margin}${warn}</span></div>`;
+    }).join('') || '<div class="note">No anchor-role tags detected.</div>';
+
+    const missingEl = document.getElementById('vision-detect-missing');
+    missingEl.style.display = d.missing_roles.length ? 'block' : 'none';
+    missingEl.textContent = d.missing_roles.length ? 'Not detected: ' + d.missing_roles.join(', ') : '';
+
+    const rejEl = document.getElementById('vision-detect-rejected');
+    rejEl.style.display = d.rejected.length ? 'block' : 'none';
+    rejEl.textContent = d.rejected.length
+      ? 'Rejected: ' + d.rejected.map(r=>`A${r.anchor_id} (tag ${r.apriltag_id}, ${r.reason})`).join('; ')
+      : '';
+
+    const warnEl = document.getElementById('vision-detect-warn');
+    const warnParts = [];
+    if (d.unknown_tag_ids.length) warnParts.push('unknown tag id(s): ' + d.unknown_tag_ids.join(', '));
+    if (d.duplicate_tag_ids.length) warnParts.push('duplicate tag id(s) seen twice, both dropped: ' + d.duplicate_tag_ids.join(', '));
+    warnEl.style.display = warnParts.length ? 'block' : 'none';
+    warnEl.textContent = warnParts.join(' · ');
+
+    const tagsEl = document.getElementById('vision-detect-tags');
+    tagsEl.style.display = d.tags.length ? 'block' : 'none';
+    tagsEl.textContent = d.tags.length
+      ? 'Tag position(s): ' + d.tags.map(t=>`${t.role} (${t.x.toFixed(3)}, ${t.y.toFixed(3)}, ${t.z.toFixed(3)})`).join('; ')
+      : '';
+
+    logMsg(`vision auto-detect: n=${d.n_detected}, proposed=${d.proposed.length}, missing=${d.missing_roles.length}, rejected=${d.rejected.length}`);
+  },
+  onPick(e){
+    const img = document.getElementById('vision-img');
+    const rect = img.getBoundingClientRect();
+    const scaleX = img.naturalWidth/rect.width, scaleY = img.naturalHeight/rect.height;
+    const u = (e.clientX-rect.left)*scaleX, v = (e.clientY-rect.top)*scaleY;
+    this.lastUV = [u, v];
+    document.getElementById('vision-uv').textContent = u.toFixed(0)+', '+v.toFixed(0);
+    const marker = document.getElementById('vision-marker');
+    marker.style.left = (e.clientX-rect.left)+'px'; marker.style.top = (e.clientY-rect.top)+'px';
+    marker.style.display = 'block';
+    document.getElementById('btn-vision-assign').disabled = false;
+  },
+  assign(){
+    if (!this.lastUV) return;
+    const sel = document.getElementById('vision-target').value;
+    const z = parseFloat(document.getElementById('vision-z').value) || 0;
+    const req = {type:'vision_place', u:this.lastUV[0], v:this.lastUV[1], z_override:z};
+    if (sel === 'tag'){
+      req.target = 'tag';
+    } else if (sel === 'new'){
+      req.target = 'anchor';
+      req.anchor_id = (store.config.anchors.length ? Math.max(...store.config.anchors.map(a=>a.id)) : 0) + 1;
+    } else {
+      req.target = 'anchor';
+      req.anchor_id = parseInt(sel.split(':')[1]);
+    }
+    this._manualAssign = true;
+    DataManager.send(req);
+  },
+  on(d){
+    if (d.type === 'vision_frame'){
+      document.getElementById('vision-frame-wrap').style.display = 'block';
+      document.getElementById('vision-img').src = 'data:image/jpeg;base64,'+d.jpeg_b64;
+      document.getElementById('vision-marker').style.display = 'none';
+      document.getElementById('vision-error').style.display = 'none';
+      // Clear any stale review from a previous, unconfirmed auto-detect — a
+      // fresh vision_detect_result (if this frame is from a new detect) will
+      // re-show it immediately after with current data.
+      document.getElementById('vision-detect-review').style.display = 'none';
+      document.getElementById('vision-detect-status').style.display = 'none';
+      // The aside is only 340px — auto-expand so clicking is actually
+      // precise; collapse manually (⤡ button or click outside) when done.
+      this.toggleExpand(true);
+    }
+    if (d.type === 'vision_place_result'){
+      document.getElementById('vision-xyz').textContent =
+        d.x.toFixed(3)+', '+d.y.toFixed(3)+', '+d.z.toFixed(3);
+      const modeEl = document.getElementById('vision-mode');
+      if (modeEl){
+        const registered = d.mode === 'registered';
+        modeEl.textContent = registered ? '✓ registered' : '⚠ flat-plane fallback (uncorrected tilt)';
+        modeEl.className = 'v ' + (registered ? 'ok' : 'warnc');
+      }
+      logMsg('vision: '+d.target+(d.anchor_id!=null?' A'+d.anchor_id:'')+
+             ' -> ('+d.x.toFixed(3)+', '+d.y.toFixed(3)+', '+d.z.toFixed(3)+')  ['+(d.mode||'?')+']');
+      if (d.target === 'tag'){
+        document.getElementById('hwcalib-tag-x').value = d.x.toFixed(3);
+        document.getElementById('hwcalib-tag-y').value = d.y.toFixed(3);
+      }
+      if (d.target === 'anchor') this.buildTargetOptions();
+      // Only collapse for a manual Assign click — the auto-detect flow also
+      // sends this shape for tagA/tagB role hits while the review panel
+      // (with the annotated frame) still needs to stay open for reviewing.
+      if (this._manualAssign){ this.toggleExpand(false); this._manualAssign = false; }
+    }
+    if (d.type === 'vision_error'){
+      const el = document.getElementById('vision-error');
+      el.style.display = 'block'; el.textContent = d.msg;
+    }
+    if (d.type === 'vision_detect_result' && d.pending){
+      this.renderDetectResult(d);
+    }
+    if (d.type === 'vision_detect_committed'){
+      document.getElementById('vision-detect-review').style.display = 'none';
+      const st = document.getElementById('vision-detect-status');
+      st.style.display = 'block';
+      st.textContent = '✓ wrote ' + d.written.map(w=>'A'+w.anchor_id).join(', ');
+      logMsg('vision auto-detect: committed ' + d.written.length + ' anchor(s)');
+      this.toggleExpand(false);
+    }
+    if (d.type === 'vision_detect_cancelled'){
+      document.getElementById('vision-detect-review').style.display = 'none';
+      logMsg('vision auto-detect: cancelled');
+      this.toggleExpand(false);
+    }
+  },
+};
+document.getElementById('vision-img').addEventListener('click', e=>Vision.onPick(e));
+
+const Registration = {
+  anchorIds: [], worldXY: [], clickIndex: 0,
+  start(){
+    const z = parseFloat(document.getElementById('reg-anchor-z').value) || 0;
+    document.getElementById('reg-result').style.display = 'none';
+    document.getElementById('reg-status').style.display = 'none';
+    document.getElementById('reg-error').style.display = 'none';
+    DataManager.send({type:'vision_register_start', anchor_z_m:z});
+  },
+  onPick(e){
+    if (this.clickIndex >= this.anchorIds.length) return;
+    const img = document.getElementById('reg-img');
+    const rect = img.getBoundingClientRect();
+    const scaleX = img.naturalWidth/rect.width, scaleY = img.naturalHeight/rect.height;
+    const u = (e.clientX-rect.left)*scaleX, v = (e.clientY-rect.top)*scaleY;
+    const marker = document.getElementById('reg-marker');
+    marker.style.left = (e.clientX-rect.left)+'px'; marker.style.top = (e.clientY-rect.top)+'px';
+    marker.style.display = 'block';
+    const anchorId = this.anchorIds[this.clickIndex];
+    DataManager.send({type:'vision_register_click', anchor_id:anchorId, u:u, v:v});
+  },
+  confirm(override){ DataManager.send({type:'vision_register_confirm', override:override}); },
+  cancel(){ DataManager.send({type:'vision_register_cancel'}); },
+  importCamcal(){
+    document.getElementById('camcal-result').style.display = 'none';
+    document.getElementById('camcal-error').style.display = 'none';
+    DataManager.send({type:'vision_import_camcal'});
+  },
+  updatePrompt(){
+    const el = document.getElementById('reg-progress');
+    if (this.clickIndex >= this.anchorIds.length){ el.textContent = 'all clicked — solving…'; return; }
+    const aid = this.anchorIds[this.clickIndex], wxy = this.worldXY[this.clickIndex];
+    el.textContent = `click anchor A${aid}  (world ${wxy[0].toFixed(2)}, ${wxy[1].toFixed(2)})   [${this.clickIndex+1}/${this.anchorIds.length}]`;
+  },
+  on(d){
+    if (d.type === 'vision_register_frame'){
+      this.anchorIds = d.anchor_ids; this.worldXY = d.world_xy; this.clickIndex = 0;
+      document.getElementById('reg-workspace').style.display = 'block';
+      document.getElementById('reg-img').src = 'data:image/jpeg;base64,'+d.jpeg_b64;
+      document.getElementById('reg-marker').style.display = 'none';
+      document.getElementById('reg-result').style.display = 'none';
+      document.getElementById('reg-error').style.display = 'none';
+      const warnEl = document.getElementById('reg-warnings');
+      if (d.warnings && d.warnings.length){
+        warnEl.style.display = 'block';
+        warnEl.innerHTML = d.warnings.map(w=>'⚠ '+w).join('<br>');
+      } else {
+        warnEl.style.display = 'none';
+      }
+      this.updatePrompt();
+      logMsg('registration: frame grabbed, click '+this.anchorIds.length+' anchors in order');
+    }
+    if (d.type === 'vision_register_progress'){
+      this.clickIndex = d.clicked.length;
+      this.updatePrompt();
+      if (d.remaining.length === 0) DataManager.send({type:'vision_register_solve'});
+    }
+    if (d.type === 'vision_register_result'){
+      document.getElementById('reg-result').style.display = 'block';
+      const rmseMm = d.rmse_m*1000, warnMm = d.warn_rmse_m*1000, blockMm = d.block_rmse_m*1000;
+      const rmseEl = document.getElementById('reg-rmse');
+      rmseEl.textContent = rmseMm.toFixed(1)+' mm  (warn '+warnMm.toFixed(0)+' / block '+blockMm.toFixed(0)+' mm)';
+      rmseEl.className = 'v ' + (rmseMm > blockMm ? 'bad' : rmseMm > warnMm ? 'warnc' : 'ok');
+      document.getElementById('reg-height').textContent = d.implied_height_m.toFixed(4)+' m';
+      document.getElementById('reg-tilt').textContent = d.implied_tilt_deg.toFixed(2)+' °';
+      document.getElementById('reg-residual-table').innerHTML =
+        d.anchor_ids.map((aid,i)=>`A${aid}: ${(d.residuals_m[i]*1000).toFixed(1)} mm`).join(' &middot; ');
+      const gateEl = document.getElementById('reg-gate-status');
+      gateEl.textContent = d.gate_passed ? '✓ passed sanity check' : '✗ FAILED sanity check — review before overriding';
+      gateEl.className = 'note ' + (d.gate_passed ? 'ok' : 'bad');
+      document.getElementById('btn-reg-confirm').style.display = d.gate_passed ? 'inline-block' : 'none';
+      document.getElementById('btn-reg-override').style.display = d.gate_passed ? 'none' : 'inline-block';
+      logMsg('registration: solved, RMSE '+rmseMm.toFixed(1)+' mm, gate_passed='+d.gate_passed);
+    }
+    if (d.type === 'vision_register_committed'){
+      document.getElementById('reg-result').style.display = 'none';
+      document.getElementById('reg-workspace').style.display = 'none';
+      const st = document.getElementById('reg-status');
+      st.style.display = 'block';
+      st.textContent = '✓ registered — RMSE '+(d.rmse_m*1000).toFixed(1)+' mm, height '
+        +d.implied_height_m.toFixed(3)+' m, tilt '+d.implied_tilt_deg.toFixed(2)+'°'
+        +(d.gate_override ? ' (OVERRIDDEN)' : '');
+      logMsg('registration: committed — RMSE '+(d.rmse_m*1000).toFixed(1)+' mm');
+    }
+    if (d.type === 'vision_register_cancelled'){
+      document.getElementById('reg-workspace').style.display = 'none';
+      document.getElementById('reg-result').style.display = 'none';
+      logMsg('registration: cancelled');
+    }
+    if (d.type === 'vision_register_error'){
+      const el = document.getElementById('reg-error');
+      el.style.display = 'block'; el.textContent = d.msg;
+    }
+    if (d.type === 'vision_camcal_imported'){
+      const el = document.getElementById('camcal-result');
+      el.style.display = 'block';
+      const b = d.before, a = d.after;
+      el.innerHTML = `✓ imported${d.camcal_date ? ' ('+d.camcal_date+')' : ''}<br>`
+        + `fx/fy: ${b.fx.toFixed(1)}/${b.fy.toFixed(1)} → ${a.fx.toFixed(1)}/${a.fy.toFixed(1)}<br>`
+        + `cx/cy: ${b.cx.toFixed(1)}/${b.cy.toFixed(1)} → ${a.cx.toFixed(1)}/${a.cy.toFixed(1)}<br>`
+        + `height: ${b.mounting_height_m.toFixed(4)} m → ${a.mounting_height_m.toFixed(4)} m`
+        + (d.tilt_deg_diagnostic!=null ? `<br>diagnostic tilt: ${d.tilt_deg_diagnostic.toFixed(2)}° (not yet corrected — run Step 1 below)` : '');
+      logMsg('camcal import: fx/fy '+a.fx.toFixed(1)+'/'+a.fy.toFixed(1)+', height '+a.mounting_height_m.toFixed(4)+' m');
+    }
+    if (d.type === 'vision_camcal_error'){
+      const el = document.getElementById('camcal-error');
+      el.style.display = 'block'; el.textContent = d.msg;
+    }
+  },
+};
+document.getElementById('reg-img').addEventListener('click', e=>Registration.onPick(e));
+
+/* ═════════════════════════════════════════════════════════════════════════
+   LIVE FEED — floating Kinect preview, toggleable in any mode. Polls
+   vision_grab_live on a timer rather than a true video stream (simplest
+   thing that looks live enough for "keep an eye on it" use — see
+   run_localization.py's _handle_vision_live_grab for why this has its own
+   message type instead of reusing vision_grab/vision_frame: it must never
+   collide with the CAL-mode click-to-place panel's state, and must never
+   be recorded into the session replay log — a continuous feed would
+   otherwise bloat every future session log by orders of magnitude).
+   ═════════════════════════════════════════════════════════════════════════ */
+const LiveFeed = {
+  active: false, intervalId: null, intervalMs: 400, staleTimer: null,
+  toggle(){ this.active ? this.stop() : this.start(); },
+  start(){
+    this.active = true;
+    document.getElementById('live-feed-panel').style.display = 'block';
+    document.getElementById('btn-live-feed').classList.add('active');
+    document.getElementById('live-feed-placeholder').style.display = 'block';
+    document.getElementById('live-feed-img').style.display = 'none';
+    document.getElementById('live-feed-status').textContent = 'connecting…';
+    this.poll();
+    this.intervalId = setInterval(()=>this.poll(), this.intervalMs);
+  },
+  stop(){
+    this.active = false;
+    document.getElementById('live-feed-panel').style.display = 'none';
+    document.getElementById('btn-live-feed').classList.remove('active');
+    if (this.intervalId){ clearInterval(this.intervalId); this.intervalId = null; }
+    if (this.staleTimer){ clearTimeout(this.staleTimer); this.staleTimer = null; }
+  },
+  poll(){
+    // Skip silently (no send) during replay or while disconnected — sending
+    // here would otherwise spam the log with 'not connected' at 2.5 Hz via
+    // DataManager.send()'s own failure logging.
+    if (store.data.mode !== 'live' || !store.data.connected) return;
+    DataManager.send({type:'vision_grab_live'});
+  },
+  on(d){
+    if (!this.active) return;
+    document.getElementById('live-feed-placeholder').style.display = 'none';
+    const img = document.getElementById('live-feed-img');
+    img.style.display = 'block';
+    img.src = 'data:image/jpeg;base64,'+d.jpeg_b64;
+    document.getElementById('live-feed-status').textContent = new Date(d.ts*1000).toLocaleTimeString();
+    if (this.staleTimer) clearTimeout(this.staleTimer);
+    this.staleTimer = setTimeout(()=>{
+      document.getElementById('live-feed-status').textContent = 'no signal';
+    }, this.intervalMs*4);
+  },
+};
+
+const BaseVer = {
+  active:false, target:200, samples:[], result:null,
+  onFix(){}, // baseline comes from robot messages
+  onRobot(r){
+    if (!this.active || !r.both_present || r.baseline_m==null) return;
+    this.samples.push(r.baseline_m);
+    const n=this.samples.length;
+    document.getElementById('bv-n').textContent=n+' / '+this.target;
+    document.getElementById('bv-bar').style.width=(n/this.target*100)+'%';
+    if (n>=this.target) this.finish();
+  },
+  finish(){
+    this.active=false;
+    const n=this.samples.length;
+    const mean=this.samples.reduce((a,b)=>a+b,0)/n;
+    const std=Math.sqrt(this.samples.reduce((a,b)=>a+(b-mean)**2,0)/n);
+    const err=(mean-store.config.baseline_nominal_m)*1000;
+    this.result={mean,std,err,n};
+    document.getElementById('bv-mean').textContent=mean.toFixed(4)+' m';
+    const be=document.getElementById('bv-err');
+    be.textContent=(err>=0?'+':'')+err.toFixed(1)+' mm';
+    be.className='v '+cls(Math.abs(err),30,80);
+    document.getElementById('bv-std').textContent=(std*1000).toFixed(1)+' mm';
+    const ok=Math.abs(err)<=30 && std*1000<=50;
+    const v=document.getElementById('bv-verdict');
+    v.textContent=ok?'✓ PASS':'✗ FAIL — recheck antenna delays';
+    v.className='v '+(ok?'ok':'bad');
+    if (ok) document.getElementById('cs-3').classList.add('done');
+    document.getElementById('btn-bv').disabled=false;
+    logMsg(`baseline verify: mean ${mean.toFixed(4)} m, err ${err.toFixed(1)} mm, σ ${(std*1000).toFixed(1)} mm`);
+  },
+};
+function bvStart(){ BaseVer.active=true; BaseVer.samples=[]; BaseVer.result=null;
+  document.getElementById('btn-bv').disabled=true;
+  document.getElementById('bv-nom').textContent=store.config.baseline_nominal_m.toFixed(3)+' m'; }
+function bvReset(){ BaseVer.active=false; BaseVer.samples=[]; BaseVer.result=null;
+  ['bv-mean','bv-err','bv-std','bv-verdict'].forEach(id=>document.getElementById(id).textContent='—');
+  document.getElementById('bv-n').textContent='0 / 200';
+  document.getElementById('bv-bar').style.width='0%';
+  document.getElementById('btn-bv').disabled=false; }
+
+function renderCalSummary(){
+  const gates=[];
+  const gate=(name,ok,detail)=>gates.push(
+    `<div class="vrow"><span class="l">${name}</span><span class="v ${ok===null?'':ok?'ok':'bad'}">${ok===null?'— not run':(ok?'✓ ':'✗ ')+detail}</span></div>`);
+  gate('ANCHOR SURVEY', Survey.lastRms==null?null:Survey.lastRms<0.05,
+       Survey.lastRms!=null?('RMS '+(Survey.lastRms*1000).toFixed(0)+' mm'):'');
+  const hwDone=Object.values(HwCal.state).length && Object.values(HwCal.state).every(s=>s.status==='done');
+  gate('ANTENNA DELAY', Object.values(HwCal.state).length?hwDone:null, hwDone?'all anchors':'incomplete');
+  gate('BASELINE', BaseVer.result?Math.abs(BaseVer.result.err)<=30:null,
+       BaseVer.result?('err '+BaseVer.result.err.toFixed(1)+' mm'):'');
+  gate('ERROR MAP', store.config.error_map.loaded?true:null,
+       store.config.error_map.loaded?'loaded':'');
+  const sync=store.system.robotN?store.system.robotPaired/store.system.robotN:null;
+  gate('SYNC', sync==null?null:sync>0.95, sync!=null?((sync*100).toFixed(1)+' % paired'):'');
+  document.getElementById('cal-summary').innerHTML=gates.join('');
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   TUNING SLIDERS / CSV / MISC
+   ═════════════════════════════════════════════════════════════════════════ */
+function setupTune(){
+  const map={filtN:['rangeFiltN',1],ekfQ:['ekfQAccel',1],ema:['emaAlpha',1],gateK:['gateK',1],
+             bias:['rangeBiasM',0.001],sigma:['sigmaAccel',1],zupt:['zuptAccelMean',1],nlos:['nlosKBias',0.001]};
+  for (const [k,[field,scale]] of Object.entries(map)){
+    const el=document.getElementById('t-'+k);
+    el.addEventListener('input',()=>{
+      document.getElementById('tv-'+k).textContent=el.value;
+      DataManager.send({type:'tune',[field]:parseFloat(el.value)*scale});
+    });
+  }
+}
+function exportCSV(){
+  if (!history.length) return;
+  const keys=[...new Set(history.flatMap(r=>Object.keys(r)))];
+  const csv=[keys.join(',')].concat(history.map(r=>keys.map(k=>r[k]??'').join(','))).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='rtls_'+new Date().toISOString().replace(/[:.]/g,'-')+'.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function toggleTrail(){ store.ui.showTrail=!store.ui.showTrail;
+  document.getElementById('btn-trail').classList.toggle('active',store.ui.showTrail); }
+function toggleRanges(){ store.ui.showRanges=!store.ui.showRanges;
+  document.getElementById('btn-ranges').classList.toggle('active',store.ui.showRanges); }
+function clearTrails(){ store.robotTrail.length=0; store.tags.forEach(t=>t.trail.length=0); }
+function logMsg(m){
+  const el=document.getElementById('log');
+  el.insertAdjacentHTML('afterbegin',
+    `<div><span class="t">${new Date().toLocaleTimeString()}</span> ${m}</div>`);
+  while (el.children.length>40) el.lastChild.remove();
+}
+
+/* ═════════════════════════════════════════════════════════════════════════
+   RENDER LOOPS + STATUS
+   ═════════════════════════════════════════════════════════════════════════ */
+(function raf(){ draw(); requestAnimationFrame(raf); })();
+setInterval(()=>{                         // DOM at 5 Hz — calm, no thrash
+  const m=store.ui.mode;
+  if (m==='operate') renderOperate();
+  else if (m==='tune') renderTune();
+  else if (m==='diag') renderDiag();
+  buildStatic();
+},200);
+setInterval(()=>{ fixRate=fixCount; fixCount=0;
+  document.getElementById('h-fps').textContent=fixRate; },1000);
+setInterval(()=>{                         // header status
+  const dot=document.getElementById('dot'), st=document.getElementById('status-text');
+  if (store.data.mode==='replay'){ dot.className='status-dot replay'; st.textContent='REPLAY'; return; }
+  if (!store.data.connected){ dot.className='status-dot error'; st.textContent='DISCONNECTED'; return; }
+  let newest=0; store.tags.forEach(t=>newest=Math.max(newest,t.lastTs));
+  const age=newest?(Date.now()/1000-newest)*1000:null;
+  document.getElementById('h-age').textContent=age!=null?age.toFixed(0):'—';
+  document.getElementById('h-cycle').textContent=store.system.cycle??'—';
+  document.getElementById('h-rate').textContent=
+    store.system.diag?store.system.diag.rate_hz.toFixed(1):'—';
+  if (age==null){ dot.className='status-dot live'; st.textContent='WAITING DATA'; }
+  else if (age>5000){ dot.className='status-dot error'; st.textContent='SIGNAL LOST'; }
+  else if (age>2000){ dot.className='status-dot stale'; st.textContent='STALE'; }
+  else { dot.className='status-dot live'; st.textContent='LIVE'; }
+},250);
+
+/* init */
+resize();
+setMode(localStorage.getItem('rtls_mode')||'operate');
+setupTune();
+DataManager.connect();
+</script>
+</body>
+</html>

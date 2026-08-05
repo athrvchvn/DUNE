@@ -1,0 +1,30 @@
+{
+  "schema": "dune_tag_delay_tuning_v1",
+  "timestamp": "2026-07-20T21:06:54",
+  "tag": 241,
+  "final_ticks": 16365,
+  "residual_err_mm": [
+    -23,
+    9,
+    67,
+    -2,
+    -2
+  ],
+  "position_err_mm": 48.1,
+  "truth_xy": [
+    1.252,
+    0.4701
+  ],
+  "history": [
+    {
+      "iter": 1,
+      "commonErrMm": -507,
+      "ticks": 16473
+    },
+    {
+      "iter": 2,
+      "commonErrMm": -2,
+      "ticks": 16365
+    }
+  ]
+}

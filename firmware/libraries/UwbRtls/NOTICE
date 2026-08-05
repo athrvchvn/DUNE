@@ -1,0 +1,23 @@
+UwbRtls
+=======
+
+This library contains, under src/dw1000/, an unmodified copy of the low-level
+register driver from the arduino-dw1000 project:
+
+    arduino-dw1000
+    Copyright (c) 2015 by Thomas Trojer <thomas@trojer.net>
+    https://github.com/thotro/arduino-dw1000
+    Licensed under the Apache License, Version 2.0 (see src/dw1000/LICENSE.md).
+
+Only the low-level transceiver driver is vendored:
+    DW1000.{h,cpp}, DW1000Time.{h,cpp}, DW1000Constants.h,
+    DW1000CompileOptions.h, deprecated.h, require_cpp11.h
+
+The high-level protocol layer of that project (DW1000Ranging / DW1000Device /
+DW1000Mac) is deliberately NOT included. Its auto-discovery ranging state
+machine is the source of the ~4-anchor and single-tag limitations this library
+exists to remove; the protocol/scheduling layer here (TwrEngine, UwbScheduler,
+HostLink) is an original reimplementation.
+
+The asymmetric double-sided two-way-ranging estimator used in TwrEngine follows
+the well-known Decawave formulation (also used by the upstream project).

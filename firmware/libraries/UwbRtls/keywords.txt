@@ -1,0 +1,40 @@
+#######################################
+# Syntax coloring map for UwbRtls
+#######################################
+
+# Datatypes (KEYWORD1)
+TwrEngine	KEYWORD1
+UwbScheduler	KEYWORD1
+HostLink	KEYWORD1
+OledStatus	KEYWORD1
+SensorImu	KEYWORD1
+RangeResult	KEYWORD1
+ImuSample	KEYWORD1
+TwrRole	KEYWORD1
+
+# Methods and functions (KEYWORD2)
+begin	KEYWORD2
+rangeTo	KEYWORD2
+serviceResponder	KEYWORD2
+setAntennaDelay	KEYWORD2
+printDeviceId	KEYWORD2
+sweep	KEYWORD2
+anchorCount	KEYWORD2
+result	KEYWORD2
+sweepSeq	KEYWORD2
+sendSweep	KEYWORD2
+show	KEYWORD2
+lastDistance	KEYWORD2
+lastPeer	KEYWORD2
+
+# Constants (LITERAL1)
+TWR_TAG	LITERAL1
+TWR_ANCHOR	LITERAL1
+MSG_POLL	LITERAL1
+MSG_POLL_ACK	LITERAL1
+MSG_RANGE	LITERAL1
+MSG_RANGE_REPORT	LITERAL1
+UWB_ADDR_BROADCAST	LITERAL1
+UWB_HOSTLINK_UDP	LITERAL1
+UWB_HOSTLINK_SERIAL	LITERAL1
+UWB_USE_OLED	LITERAL1

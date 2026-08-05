@@ -1,0 +1,31 @@
+# UWB RTLS — Python host pipeline
+#
+# Install:  pip install -r python/requirements.txt
+#
+# The repo had no manifest until now; this is reverse-engineered from imports
+# and then verified against the modules that actually run.
+
+# ── Core host (run_localization.py and the rtls package) ─────────────────────
+numpy
+scipy                 # chi2 gating in fusion_ekf, least_squares in survey solves
+websockets            # the gui.html transport; run_localization exits without it
+pyserial              # serial transport (UDP needs nothing extra)
+
+# ── Moving-horizon estimators (rtls/mhe*.py) ─────────────────────────────────
+# Optional. Without it the EKF path still runs; only the MHE estimators are
+# unavailable. This is the pip build of the same CasADi the MATLAB side uses,
+# so the two implementations solve identical problems.
+casadi
+
+# ── Offline analysis and campaign reports ────────────────────────────────────
+matplotlib
+pandas
+h5py                  # MATLAB v7.3 .mat files (matlab/results/rover_runs/*.mat)
+
+# ── Tests ────────────────────────────────────────────────────────────────────
+pytest
+
+# ── Vision (optional; see python/vision/requirements-vision.txt) ─────────────
+# opencv-python, pupil-apriltags, and pylibfreenect2 are kept in that separate
+# file because pylibfreenect2 needs a hand-built libfreenect2 and Cython<3.0
+# importable before pip runs. See docs/kinect_vision_setup.md.

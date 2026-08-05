@@ -1,0 +1,59 @@
+{
+  "schema": "dune_range_correction_v1",
+  "date": "2026-07-20",
+  "method": "per-anchor linear in first-path power (dBm): corr_mm = slope*fp + intercept; corrected_range = raw - corr_mm/1000. fp clamped to fp_valid_dBm before evaluating (extrapolation guard).",
+  "fitted_on": "static_accuracy_20260720_195637 (19 spots, Kinect click-truth)",
+  "loso_position_rmse_mm": 100,
+  "anchors": [
+    {
+      "id": 1,
+      "slope_mm_per_dB": 9.46,
+      "intercept_mm": 839.9,
+      "fp_valid_dBm": [
+        -114.7,
+        -74.7
+      ],
+      "n_spots": 17
+    },
+    {
+      "id": 2,
+      "slope_mm_per_dB": 7.65,
+      "intercept_mm": 798.9,
+      "fp_valid_dBm": [
+        -109,
+        -71.3
+      ],
+      "n_spots": 16
+    },
+    {
+      "id": 3,
+      "slope_mm_per_dB": 8.55,
+      "intercept_mm": 761.5,
+      "fp_valid_dBm": [
+        -117.4,
+        -73.9
+      ],
+      "n_spots": 16
+    },
+    {
+      "id": 4,
+      "slope_mm_per_dB": 9.38,
+      "intercept_mm": 961.9,
+      "fp_valid_dBm": [
+        -110.5,
+        -74.4
+      ],
+      "n_spots": 17
+    },
+    {
+      "id": 5,
+      "slope_mm_per_dB": 8.99,
+      "intercept_mm": 839.1,
+      "fp_valid_dBm": [
+        -109.2,
+        -79.5
+      ],
+      "n_spots": 18
+    }
+  ]
+}
