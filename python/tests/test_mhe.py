@@ -36,14 +36,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 casadi = pytest.importorskip('casadi', reason="CasADi is required for the MHE")
 
-from rtls.anchor_config import AnchorConfig          # noqa: E402
-from rtls.ekf import quat_rpy, world_yaw_rate        # noqa: E402
-from rtls.frame_parser import FrameParser            # noqa: E402
-from rtls.mhe_estimator import MheEstimator          # noqa: E402
-from rtls.mhe_rigid import MheRigid                  # noqa: E402
-from rtls.range_correction import RangeCorrection    # noqa: E402
-from rtls.raw_log import read_raw_tee                # noqa: E402
-from rtls.solve_sweep import solve_sweep             # noqa: E402
+from dune.anchor_config import AnchorConfig          # noqa: E402
+from dune.ekf import quat_rpy, world_yaw_rate        # noqa: E402
+from dune.frame_parser import FrameParser            # noqa: E402
+from dune.mhe_estimator import MheEstimator          # noqa: E402
+from dune.mhe_rigid import MheRigid                  # noqa: E402
+from dune.range_correction import RangeCorrection    # noqa: E402
+from dune.raw_log import read_raw_tee                # noqa: E402
+from dune.solve_sweep import solve_sweep             # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 LOGS = REPO / 'logs'

@@ -83,7 +83,7 @@ def rover_run_report(app, ctx, matFile: str, anchors: str | None = None,
 })
 def session_summary(app, ctx, log: str) -> dict:
     """Cheap first look at a log: what is in it, before spending a full replay."""
-    from rtls.session_log import read_session_log
+    from dune.session_log import read_session_log
 
     p = resolve_under_repo(log)
     S = read_session_log(p)
@@ -117,8 +117,8 @@ def survey_reconstruct(app, ctx, survey: str, reference: str | None = None,
     import json
 
 
-    from rtls.anchor_config import AnchorConfig
-    from rtls.survey import (build_survey_anchors, fit_anchor_delays,
+    from dune.anchor_config import AnchorConfig
+    from dune.survey import (build_survey_anchors, fit_anchor_delays,
                              read_survey)
 
     path = resolve_under_repo(survey)
@@ -144,7 +144,7 @@ def survey_reconstruct(app, ctx, survey: str, reference: str | None = None,
     ctx.artifact(out, 'json')
 
     if write:
-        target = RESULTS_DIR.parent / 'config' / 'anchors.json'
+        target = CONFIG_DIR / 'anchors.json'
         target.write_text(json.dumps(doc, indent=2))
         ctx.log(f"WROTE {target} — restart or reload to pick it up")
         ctx.artifact(target, 'json')
@@ -176,8 +176,8 @@ def survey_fit(app, ctx, survey: str, reference: str | None = None) -> dict:
     Reported in millimetres and in DW1000 ticks, because ticks are what gets
     pushed to an anchor's NVS.
     """
-    from rtls.anchor_config import AnchorConfig
-    from rtls.survey import fit_anchor_delays, read_survey
+    from dune.anchor_config import AnchorConfig
+    from dune.survey import fit_anchor_delays, read_survey
 
     path = resolve_under_repo(survey)
     ref_path = resolve_under_repo(reference) if reference else (
@@ -210,9 +210,9 @@ def tag_bias_fit(app, ctx, capture: str, anchors: str | None = None,
     names that layout in its own `note` field — so a mismatch shows up as a large
     residual rather than a wrong-but-plausible bias.
     """
-    from rtls.anchor_config import AnchorConfig
-    from rtls.frame_parser import FrameParser
-    from rtls.tag_bias import fit_tag_bias as _fit, load_anchor_bias
+    from dune.anchor_config import AnchorConfig
+    from dune.frame_parser import FrameParser
+    from dune.tag_bias import fit_tag_bias as _fit, load_anchor_bias
 
     cap = resolve_under_repo(capture)
     cfg = AnchorConfig.from_json(str(resolve_under_repo(anchors))) if anchors \

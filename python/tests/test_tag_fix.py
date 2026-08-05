@@ -21,8 +21,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from host.bus import dumps                                  # noqa: E402
 from host.pipeline import PipelineConfig, SweepPipeline      # noqa: E402
 from host.tag_fix import tag_fix_message                     # noqa: E402
-from rtls.anchor_config import AnchorConfig                  # noqa: E402
-from rtls.frame_parser import FrameParser                    # noqa: E402
+from dune.anchor_config import AnchorConfig                  # noqa: E402
+from dune.frame_parser import FrameParser                    # noqa: E402
 
 # Every field the pre-swap pipeline emitted. Removing one is a breaking change
 # to every recorded log, so this list should only ever grow.
@@ -176,7 +176,7 @@ def test_imu_angles_are_real_values_when_a_tail_is_present():
     It was briefly a hardcoded None, which left the panel blank with no error.
     """
     import numpy as np
-    from rtls.ekf import quat_rpy
+    from dune.ekf import quat_rpy
 
     roll, pitch, yaw = quat_rpy([0.9803, 0.0386, -0.0911, 0.1711])
     assert np.isfinite([roll, pitch, yaw]).all()

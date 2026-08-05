@@ -24,10 +24,10 @@ from typing import Optional
 
 import numpy as np
 
-from rtls.ekf import FusionEkf
-from rtls.system_health import SystemHealth
-from rtls.range_hold import RangeHold
-from rtls.solve_sweep import solve_sweep
+from dune.ekf import FusionEkf
+from dune.system_health import SystemHealth
+from dune.range_hold import RangeHold
+from dune.solve_sweep import solve_sweep
 
 
 @dataclass
@@ -281,7 +281,7 @@ class SweepPipeline:
         so switching estimator mid-session does not blank the display for a
         window's worth of sweeps.
         """
-        from rtls.mhe_estimator import MheEstimator
+        from dune.mhe_estimator import MheEstimator
 
         if rt.mhe is None:
             rt.mhe = MheEstimator(self.anchors.coords)
@@ -297,7 +297,7 @@ class SweepPipeline:
 
         omega = 0.0
         if imu is not None:
-            from rtls.ekf import world_yaw_rate
+            from dune.ekf import world_yaw_rate
             omega = world_yaw_rate(imu.quat, imu.gyro)
 
         pm, _, info = rt.mhe.push(sol.range_corr, sol.w, max(dt, 1e-3),

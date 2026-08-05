@@ -6,7 +6,7 @@ checked against each other on recorded hardware sessions (see
 ``python/tests/test_equivalence.py``), so **any change here must be mirrored in
 the MATLAB file and vice versa** or the cross-check will start failing.
 
-Two details differ from the older ``rtls.multilaterator.Multilaterator`` and are
+Two details differ from the older ``dune.multilaterator.Multilaterator`` and are
 deliberate, not oversights:
 
 *   The solve is 2D with the anchor/tag height difference folded into the

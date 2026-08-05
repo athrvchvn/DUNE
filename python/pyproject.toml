@@ -1,0 +1,92 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dune-uwb"
+version = "1.0.0"
+description = "DUNE — a dual-tag UWB navigation engine for indoor ground robots"
+readme = "../README.md"
+requires-python = ">=3.9"
+license = { file = "../LICENSE" }
+authors = [
+    { name = "Atharva Chavan" },
+    { name = "Adersh M" },
+    { name = "Ashish Dutta" },
+]
+keywords = ["uwb", "dw1000", "localization", "rtls", "robotics", "indoor-positioning"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+]
+
+# Lower bounds, not pins. This is a library meant to sit alongside whatever
+# else is in a robotics environment, and hard pins there cause more conflicts
+# than they prevent. The bounds are the oldest releases the code is known to
+# work against; the versions it is actually verified on are in
+# docs/compatibility.md.
+dependencies = [
+    "numpy>=1.21",
+    "scipy>=1.7",       # chi2 gating in the EKF, least_squares in the survey solve
+    "websockets>=10",   # the operator GUI transport
+    "pyserial>=3.5",    # serial transport; UDP needs nothing extra
+]
+
+[project.optional-dependencies]
+# The moving-horizon estimators. Without CasADi the EKF path still runs and
+# only the MHE is unavailable. This is the pip build of the same solver the
+# MATLAB side uses, so the two implementations pose identical problems.
+mhe = ["casadi>=3.6"]
+
+# Offline analysis and campaign reports.
+reports = [
+    "matplotlib>=3.5",
+    "pandas>=1.3",
+    "h5py>=3.0",        # MATLAB v7.3 .mat files
+]
+
+# Overhead-camera ground truth. pylibfreenect2 is deliberately absent: its
+# build needs Cython<3.0 importable before pip runs and a hand-built
+# libfreenect2. See docs/vision_ground_truth.md.
+vision = [
+    "opencv-python>=4.5",
+    "pupil-apriltags>=1.0",
+]
+
+dev = [
+    "pytest>=6.0",
+    "pyflakes>=2.4",    # test_static_checks.py runs it as part of the suite
+    "ruff>=0.1",
+]
+
+# Everything except vision, which needs system libraries.
+all = ["dune-uwb[mhe,reports,dev]"]
+
+[project.urls]
+Repository = "https://github.com/AdershM-2/DUNE"
+
+[tool.setuptools]
+packages = ["dune", "host", "reports", "rover", "tools"]
+
+[tool.setuptools.package-data]
+dune = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+# The vendored and pre-port trees carry their own style; linting them would
+# mean either a noisy failure or a stale ignore list.
+exclude = ["vision", "tools"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E501",  # long lines: the prose comments in this codebase are deliberate
+    "E741",  # `l` as a loop variable over lines, used throughout
+]

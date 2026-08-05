@@ -40,10 +40,10 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from rtls.frame_parser import FrameParser              # noqa: E402
-from rtls.multilaterate import multilaterate           # noqa: E402
-from rtls.nlos import gap_weights                      # noqa: E402
-from rtls.range_correction import RangeCorrection      # noqa: E402
+from dune.frame_parser import FrameParser              # noqa: E402
+from dune.multilaterate import multilaterate           # noqa: E402
+from dune.nlos import gap_weights                      # noqa: E402
+from dune.range_correction import RangeCorrection      # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, '..', '..'))
@@ -346,7 +346,7 @@ def test_collinear_geometry_is_refused():
 
 def test_sentinel_power_marks_range_rejected():
     """INT32_MIN is a DW1000 diagnostic-read failure, not a real power reading."""
-    from rtls.solve_sweep import SENTINEL, solve_sweep
+    from dune.solve_sweep import SENTINEL, solve_sweep
 
     class Sweep:
         ids = [1, 2, 3, 4]

@@ -1,4 +1,4 @@
-"""`rtls.ekf.FusionEkf` — the behaviours the session corpus cannot reach.
+"""`dune.ekf.FusionEkf` — the behaviours the session corpus cannot reach.
 
 The equivalence test pins the EKF against MATLAB on real logs, which is the
 stronger check but only covers what those sessions happened to do. None of them
@@ -16,7 +16,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from rtls.ekf import CHI2_95, FusionEkf, world_accel      # noqa: E402
+from dune.ekf import CHI2_95, FusionEkf, world_accel      # noqa: E402
 
 
 def _ekf(**kw) -> FusionEkf:

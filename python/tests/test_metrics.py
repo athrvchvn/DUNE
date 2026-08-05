@@ -1,4 +1,4 @@
-"""`rtls.metrics` — trajectory scoring, pinned to MATLAB's definitions.
+"""`dune.metrics` — trajectory scoring, pinned to MATLAB's definitions.
 
 These are small, exact tests rather than corpus tests, because the failure mode
 here is not "crashes on real data" but "quietly computes a slightly different
@@ -16,7 +16,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from rtls.metrics import (VisionLog, align_truth, prctile,       # noqa: E402
+from dune.metrics import (VisionLog, align_truth, prctile,       # noqa: E402
                           read_vision_log, trajectory_metrics)
 
 

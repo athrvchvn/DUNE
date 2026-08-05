@@ -16,7 +16,7 @@ from typing import Optional
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from rtls.paths import CONFIG_DIR  # noqa: E402
+from dune.paths import CONFIG_DIR  # noqa: E402
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_CONFIG_PATH = CONFIG_DIR / 'kinect_vision.json'

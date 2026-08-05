@@ -46,7 +46,7 @@ except ImportError:
 SCRIPT_DIR = Path(__file__).resolve().parent
 # Running as a script from anywhere: make `python/` importable.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from rtls.paths import CONFIG_DIR
+from dune.paths import CONFIG_DIR
 
 
 # ── MDS ──────────────────────────────────────────────────────────────────────

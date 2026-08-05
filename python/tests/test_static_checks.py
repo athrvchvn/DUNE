@@ -26,7 +26,7 @@ PY = Path(__file__).resolve().parents[1]
 # The packages this port owns. `analysis/` and the standalone calibration scripts
 # predate it and carry their own lint debt; adding them here would mean either a
 # noisy failure or a stale ignore list, so they are deliberately out of scope.
-OWNED = ('host', 'rtls', 'reports', 'tests')
+OWNED = ('host', 'dune', 'reports', 'tests')
 
 
 def _pyflakes(paths):

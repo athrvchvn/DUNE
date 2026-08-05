@@ -73,7 +73,7 @@ def test_a_captured_run_can_be_scored_by_the_report(tmp_path):
     from pathlib import Path
 
     from reports.rover import rover_report
-    from rtls.anchor_config import AnchorConfig
+    from dune.anchor_config import AnchorConfig
 
     # The SAME geometry the synthetic ranges are generated from. Passing None
     # here silently falls back to anchors.json — a different, 4-anchor layout —
@@ -253,7 +253,7 @@ def _app(tmp_path):
     from host.app import App
     import host.jobs_offline                          # noqa: F401
     import host.rover_api as rapi
-    from rtls.anchor_config import AnchorConfig
+    from dune.anchor_config import AnchorConfig
 
     app = App(log_path=tmp_path / 's.ndjson')
     app.set_config_msg(lambda: {'type': 'config'})

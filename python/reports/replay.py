@@ -4,13 +4,13 @@ Port of the analysis in ``matlab/scripts/replay_baseline.m``, with the same
 report layout so the two pipelines' outputs can be compared by eye.
 
 The point of a replay is that it uses **the same solve path as the live app** —
-`rtls.solve_sweep` — so a bug found here is the bug that was live. The previous
+`dune.solve_sweep` — so a bug found here is the bug that was live. The previous
 Python pipeline inlined its solve inside the live loop, which meant offline
 analysis and live behaviour could drift apart, and did.
 
 Two input dialects, because both exist in this repo:
 
-* a **JSONL session log** (`rtls_log_*.jsonl`), read via `rtls.session_log`
+* a **JSONL session log** (`rtls_log_*.jsonl`), read via `dune.session_log`
 * a **raw serial tee** (`serial_raw_*.log`), tab-stamped `<t_host>\\t<line>`,
   parsed with `FrameParser` — the more faithful of the two, since it exercises
   the parser as well as the solver
@@ -24,13 +24,13 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from rtls.anchor_config import AnchorConfig
-from rtls.paths import config
-from rtls.frame_parser import FrameParser
-from rtls.metrics import prctile
-from rtls.raw_log import is_raw_tee, read_raw_tee
-from rtls.session_log import read_session_log
-from rtls.solve_sweep import solve_sweep
+from dune.anchor_config import AnchorConfig
+from dune.paths import config
+from dune.frame_parser import FrameParser
+from dune.metrics import prctile
+from dune.raw_log import is_raw_tee, read_raw_tee
+from dune.session_log import read_session_log
+from dune.solve_sweep import solve_sweep
 
 from .writer import ReportWriter
 

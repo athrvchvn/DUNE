@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-# python/rtls/paths.py -> python/rtls -> python -> repo root
+# python/dune/paths.py -> python/dune -> python -> repo root
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 CONFIG_DIR = REPO_ROOT / 'config'      # tracked; the deployment's parameters

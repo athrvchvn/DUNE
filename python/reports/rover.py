@@ -25,10 +25,10 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from rtls.anchor_config import AnchorConfig
-from rtls.paths import config
-from rtls.metrics import prctile, trajectory_metrics
-from rtls.solve_sweep import solve_sweep
+from dune.anchor_config import AnchorConfig
+from dune.paths import config
+from dune.metrics import prctile, trajectory_metrics
+from dune.solve_sweep import solve_sweep
 
 from .matfile import as_text, load_mat, scalar
 from .replay import Sweep

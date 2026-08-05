@@ -26,7 +26,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Optional
 
-# Add parent so `rtls` is importable when run as a script
+# Add parent so `dune` is importable when run as a script
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from host.app       import App
@@ -37,11 +37,11 @@ from host.rover_api import HANDLERS as ROVER_HANDLERS  # also registers wheels_t
 import host.jobs_calib                        # noqa: F401  (registers the CAL jobs)
 from host.paths import list_files
 
-from rtls import FrameParser, AnchorConfig
-from rtls.ekf            import quat_rpy, world_accel
-from rtls.fusion_config  import FUSION_DEFAULTS, TAG_PALETTE
-from rtls.range_correction import RangeCorrection
-from rtls.rigid_body     import RigidBodyTracker
+from dune import FrameParser, AnchorConfig
+from dune.ekf            import quat_rpy, world_accel
+from dune.fusion_config  import FUSION_DEFAULTS, TAG_PALETTE
+from dune.range_correction import RangeCorrection
+from dune.rigid_body     import RigidBodyTracker
 from host.pipeline       import PipelineConfig, SweepPipeline
 from host.tag_fix        import tag_fix_message
 from tools.multipoint_survey import (solve_anchor_positions, write_anchors_json,
@@ -77,7 +77,7 @@ except ImportError:
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
 SCRIPT_DIR = Path(__file__).resolve().parent
-from rtls.paths import CONFIG_DIR
+from dune.paths import CONFIG_DIR
 LOG_DIR    = SCRIPT_DIR / 'logs'
 LOG_DIR.mkdir(exist_ok=True)
 

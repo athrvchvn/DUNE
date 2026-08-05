@@ -106,7 +106,7 @@ class _FigureContext:
 
 def safe_stats(values) -> dict:
     """median/p95/max of a possibly all-NaN array, without NumPy warnings."""
-    from rtls.metrics import prctile
+    from dune.metrics import prctile
     a = np.asarray(values, dtype=float)
     a = a[np.isfinite(a)]
     if a.size == 0:

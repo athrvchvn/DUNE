@@ -42,7 +42,7 @@ from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from rtls import FrameParser
+from dune import FrameParser
 
 DEFAULT_UDP_PORT     = 5005
 DEFAULT_BAUD         = 115200

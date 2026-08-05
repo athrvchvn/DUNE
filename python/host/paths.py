@@ -15,8 +15,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-# Locations come from the library (rtls.paths); this module adds only policy.
-from rtls.paths import (  # noqa: E402,F401
+# Locations come from the library (dune.paths); this module adds only policy.
+from dune.paths import (  # noqa: E402,F401
     CONFIG_DIR, DATA_DIR, LOGS_DIR, MATLAB_DIR, PYTHON_DIR, REPO_ROOT,
     RESULTS_DIR,
 )

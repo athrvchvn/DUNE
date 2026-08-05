@@ -1,4 +1,4 @@
-"""`rtls.session_log` against every session log this repo actually contains.
+"""`dune.session_log` against every session log this repo actually contains.
 
 The reader has to survive two dialects — MATLAB's `dune.sweepRecord` output and
 Python's `SessionRecorder`, which interleaves every broadcast family — so the
@@ -19,7 +19,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from rtls.session_log import (discover_anchor_ids, read_session_log)  # noqa: E402
+from dune.session_log import (discover_anchor_ids, read_session_log)  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 MATLAB_LOGS = sorted((REPO / 'logs').glob('*.jsonl'))
@@ -206,7 +206,7 @@ def test_both_raw_tee_formats_are_read(tmp_path):
     UDP. Every udp_raw_*.log therefore read as empty, silently: no error, just a
     session that looked like it had no data.
     """
-    from rtls.raw_log import is_raw_tee, read_raw_tee
+    from dune.raw_log import is_raw_tee, read_raw_tee
 
     serial = tmp_path / 'serial_raw_x.log'
     serial.write_text("1784562647.555\tRTLS,v3,1,240,1,1,1000,-80,-84,10\n"
@@ -224,7 +224,7 @@ def test_both_raw_tee_formats_are_read(tmp_path):
 
 
 def test_a_jsonl_is_not_mistaken_for_a_raw_tee(tmp_path):
-    from rtls.raw_log import is_raw_tee
+    from dune.raw_log import is_raw_tee
     p = tmp_path / 's.jsonl'
     p.write_text(json.dumps({'tag_id': 240, 't_ms': 1}) + '\n')
     assert not is_raw_tee(p)
@@ -233,7 +233,7 @@ def test_a_jsonl_is_not_mistaken_for_a_raw_tee(tmp_path):
 @pytest.mark.skipif(not MATLAB_LOGS, reason="no corpus in this checkout")
 def test_the_committed_udp_tees_are_readable():
     """The regression this guards: these all read as empty before the fix."""
-    from rtls.raw_log import read_raw_tee
+    from dune.raw_log import read_raw_tee
     udp = sorted((REPO / 'logs').glob('udp_raw_*.log'))
     if not udp:
         pytest.skip("no udp_raw logs committed")

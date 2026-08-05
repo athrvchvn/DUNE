@@ -43,10 +43,10 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from host.pipeline import PipelineConfig, SweepPipeline      # noqa: E402
-from rtls.anchor_config import AnchorConfig                  # noqa: E402
-from rtls.frame_parser import FrameParser                    # noqa: E402
-from rtls.range_correction import RangeCorrection            # noqa: E402
-from rtls.session_log import read_session_log                # noqa: E402
+from dune.anchor_config import AnchorConfig                  # noqa: E402
+from dune.frame_parser import FrameParser                    # noqa: E402
+from dune.range_correction import RangeCorrection            # noqa: E402
+from dune.session_log import read_session_log                # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 LOGS = REPO / 'logs'

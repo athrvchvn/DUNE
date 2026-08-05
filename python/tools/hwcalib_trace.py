@@ -3,7 +3,7 @@
 hwcalib_trace.py — dual-serial capture + merged timeline for HWCALIB root-cause
 investigation (see the plan: instrumentation only, no fix).
 
-Standalone diagnostic tool. Does NOT import or touch run_localization.py, rtls/,
+Standalone diagnostic tool. Does NOT import or touch run_localization.py, dune/,
 or any part of the live RTLS pipeline — safe to run alongside (or instead of) the
 host, with zero risk to the production path.
 

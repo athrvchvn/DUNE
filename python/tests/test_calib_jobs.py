@@ -243,7 +243,7 @@ async def test_survey_capture_writes_a_reconstructable_file(tmp_path):
 
     from pathlib import Path
 
-    from rtls.survey import read_survey
+    from dune.survey import read_survey
     cap = read_survey(Path(r['file']))
     assert cap.n_pairs == 6
     assert row['artifacts'], "no artifact recorded"

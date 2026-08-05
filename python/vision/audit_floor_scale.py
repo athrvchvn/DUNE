@@ -27,7 +27,7 @@ import cv2
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from rtls.paths import CONFIG_DIR
+from dune.paths import CONFIG_DIR
 from vision.vision_config import VisionConfig, DEFAULT_CONFIG_PATH
 from vision.kinect_capture import KinectCapture
 from vision.backproject import mirror_correct, pixel_to_world

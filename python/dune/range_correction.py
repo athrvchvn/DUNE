@@ -138,7 +138,7 @@ def fit_range_correction(
             "corrected_range = raw - corr_mm/1000. fp clamped to fp_valid_dBm before "
             "evaluating (extrapolation guard)."
         ),
-        "fitted_by": "python/rtls/range_correction.py:fit_range_correction",
+        "fitted_by": "python/dune/range_correction.py:fit_range_correction",
         "anchors": anchors,
     }
 

@@ -9,7 +9,7 @@ After the 2-tier redesign (see docs/calibration_redesign_2tier.md):
     correction and never pushes delays itself.
 
   - Tier-2 (systematic per-anchor error) is handled by the SPATIAL ERROR MAP
-    (`rtls/error_map.py` + `error_map.json`), NOT here.
+    (`dune/error_map.py` + `error_map.json`), NOT here.
 
 The old Level-2 software bias (per-anchor constant/linear) and the b0→Δticks antenna-delay
 auto-push were removed: together they caused a double-correction, and the push had an

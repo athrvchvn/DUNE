@@ -27,8 +27,8 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from rtls.anchor_config import AnchorConfig                       # noqa: E402
-from rtls.survey import (align_to, apply_delays, build_survey_anchors,  # noqa: E402
+from dune.anchor_config import AnchorConfig                       # noqa: E402
+from dune.survey import (align_to, apply_delays, build_survey_anchors,  # noqa: E402
                          fit_anchor_delays, mds_2d, read_survey)
 
 REPO = Path(__file__).resolve().parents[2]
@@ -225,9 +225,9 @@ def test_tag_bias_fit_reproduces_matlab_exactly():
     scipy_io = pytest.importorskip('scipy.io')
     import numpy as np
 
-    from rtls.anchor_config import AnchorConfig
-    from rtls.frame_parser import FrameParser
-    from rtls.tag_bias import fit_tag_bias, load_anchor_bias
+    from dune.anchor_config import AnchorConfig
+    from dune.frame_parser import FrameParser
+    from dune.tag_bias import fit_tag_bias, load_anchor_bias
 
     ref = {int(o.tag): (np.asarray(o.pos, float), float(o.biasM))
            for o in np.atleast_1d(
@@ -259,9 +259,9 @@ def test_the_anchor_bias_file_is_what_makes_it_match():
     reporting a bias that looks reasonable and is not.
     """
 
-    from rtls.anchor_config import AnchorConfig
-    from rtls.frame_parser import FrameParser
-    from rtls.tag_bias import fit_tag_bias, load_anchor_bias
+    from dune.anchor_config import AnchorConfig
+    from dune.frame_parser import FrameParser
+    from dune.tag_bias import fit_tag_bias, load_anchor_bias
 
     ab = load_anchor_bias()
     assert ab, "anchor_bias.json did not load"
@@ -282,9 +282,9 @@ def test_the_anchor_bias_file_is_what_makes_it_match():
 @pytest.mark.skipif(not STATIC_CAPTURE.exists(), reason="no static capture")
 def test_tag_bias_result_is_json_safe():
     from host.bus import dumps
-    from rtls.anchor_config import AnchorConfig
-    from rtls.frame_parser import FrameParser
-    from rtls.tag_bias import fit_tag_bias, load_anchor_bias
+    from dune.anchor_config import AnchorConfig
+    from dune.frame_parser import FrameParser
+    from dune.tag_bias import fit_tag_bias, load_anchor_bias
 
     sweeps = [s for s in (FrameParser.parse(l) for l in
                           STATIC_CAPTURE.read_text(errors='replace').splitlines())
